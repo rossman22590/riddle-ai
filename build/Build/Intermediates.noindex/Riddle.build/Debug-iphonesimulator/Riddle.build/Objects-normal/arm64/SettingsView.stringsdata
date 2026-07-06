@@ -7,7 +7,7 @@
         "key": "Settings",
         "location": {
           "startingColumn": 30,
-          "startingLine": 98
+          "startingLine": 128
         }
       },
       {
@@ -15,7 +15,7 @@
         "key": "The diary's hand",
         "location": {
           "startingColumn": 25,
-          "startingLine": 69
+          "startingLine": 99
         }
       },
       {
@@ -23,7 +23,7 @@
         "key": "The ink",
         "location": {
           "startingColumn": 25,
-          "startingLine": 82
+          "startingLine": 112
         }
       },
       {
@@ -31,15 +31,15 @@
         "key": "sk-or-…",
         "location": {
           "startingColumn": 33,
-          "startingLine": 23
+          "startingLine": 25
         }
       },
       {
         "comment": "",
-        "key": "Key saved — the diary is awake.",
+        "key": "Key saved.",
         "location": {
           "startingColumn": 31,
-          "startingLine": 38
+          "startingLine": 41
         }
       },
       {
@@ -47,7 +47,7 @@
         "key": "No key yet — the diary sleeps until you give it a voice.",
         "location": {
           "startingColumn": 31,
-          "startingLine": 42
+          "startingLine": 59
         }
       },
       {
@@ -55,7 +55,7 @@
         "key": "Get an OpenRouter key ↗",
         "location": {
           "startingColumn": 26,
-          "startingLine": 46
+          "startingLine": 63
         }
       },
       {
@@ -63,7 +63,7 @@
         "key": "Save key",
         "location": {
           "startingColumn": 32,
-          "startingLine": 27
+          "startingLine": 29
         }
       },
       {
@@ -71,7 +71,23 @@
         "key": "Remove",
         "location": {
           "startingColumn": 36,
-          "startingLine": 31
+          "startingLine": 33
+        }
+      },
+      {
+        "comment": "",
+        "key": "Listening…",
+        "location": {
+          "startingColumn": 48,
+          "startingLine": 49
+        }
+      },
+      {
+        "comment": "",
+        "key": "Test the diary's voice",
+        "location": {
+          "startingColumn": 65,
+          "startingLine": 49
         }
       },
       {
@@ -79,7 +95,7 @@
         "key": "OpenRouter",
         "location": {
           "startingColumn": 26,
-          "startingLine": 49
+          "startingLine": 66
         }
       },
       {
@@ -87,7 +103,7 @@
         "key": "Your key is stored securely in the device Keychain and sent only to openrouter.ai. The diary reads the ink on the page with a vision model — nothing else.",
         "location": {
           "startingColumn": 26,
-          "startingLine": 51
+          "startingLine": 68
         }
       },
       {
@@ -95,7 +111,7 @@
         "key": "model slug",
         "location": {
           "startingColumn": 31,
-          "startingLine": 55
+          "startingLine": 72
         }
       },
       {
@@ -103,7 +119,7 @@
         "key": "Choose a model",
         "location": {
           "startingColumn": 26,
-          "startingLine": 58
+          "startingLine": 75
         }
       },
       {
@@ -111,7 +127,7 @@
         "key": "Model",
         "location": {
           "startingColumn": 26,
-          "startingLine": 64
+          "startingLine": 81
         }
       },
       {
@@ -119,7 +135,39 @@
         "key": "Must be a vision-capable model — it reads your handwriting from the page.",
         "location": {
           "startingColumn": 26,
-          "startingLine": 66
+          "startingLine": 83
+        }
+      },
+      {
+        "comment": "",
+        "key": "Let the diary draw",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 87
+        }
+      },
+      {
+        "comment": "",
+        "key": "image model",
+        "location": {
+          "startingColumn": 35,
+          "startingLine": 89
+        }
+      },
+      {
+        "comment": "",
+        "key": "Illustrations",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 94
+        }
+      },
+      {
+        "comment": "",
+        "key": "When you ask it to draw, the diary sketches — always in black ink, never colour. Uses an image-generation model (default google/gemini-3.1-flash-lite-image).",
+        "location": {
+          "startingColumn": 26,
+          "startingLine": 96
         }
       },
       {
@@ -127,7 +175,7 @@
         "key": "The quick brown fox",
         "location": {
           "startingColumn": 26,
-          "startingLine": 75
+          "startingLine": 105
         }
       },
       {
@@ -135,7 +183,7 @@
         "key": "Script",
         "location": {
           "startingColumn": 28,
-          "startingLine": 70
+          "startingLine": 100
         }
       },
       {
@@ -143,7 +191,7 @@
         "key": "Haptic feedback",
         "location": {
           "startingColumn": 28,
-          "startingLine": 89
+          "startingLine": 119
         }
       },
       {
@@ -151,7 +199,7 @@
         "key": "Pause before the ink is drunk: %.1fs",
         "location": {
           "startingColumn": 30,
-          "startingLine": 84
+          "startingLine": 114
         }
       },
       {
@@ -159,7 +207,7 @@
         "key": "Replay the introduction",
         "location": {
           "startingColumn": 28,
-          "startingLine": 93
+          "startingLine": 123
         }
       },
       {
@@ -167,7 +215,7 @@
         "key": "Riddle · an enchanted diary for iPad. Write with your Apple Pencil or a fingertip; pause, and your words fade as the diary drinks the ink and answers in flowing script.",
         "location": {
           "startingColumn": 26,
-          "startingLine": 95
+          "startingLine": 125
         }
       },
       {
@@ -175,7 +223,7 @@
         "key": "Done",
         "location": {
           "startingColumn": 28,
-          "startingLine": 102
+          "startingLine": 132
         }
       }
     ]

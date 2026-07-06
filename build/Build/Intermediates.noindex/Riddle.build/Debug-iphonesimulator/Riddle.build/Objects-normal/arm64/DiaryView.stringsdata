@@ -6,16 +6,32 @@
         "comment": "",
         "key": "Write upon the page, and the diary will answer.",
         "location": {
-          "startingColumn": 22,
-          "startingLine": 109
+          "startingColumn": 24,
+          "startingLine": 142
         }
       },
       {
         "comment": "",
-        "key": "Tap with two fingers for the guide.",
+        "key": "The diary is asleep. Tap the corner to give it a voice.",
         "location": {
-          "startingColumn": 22,
-          "startingLine": 112
+          "startingColumn": 24,
+          "startingLine": 143
+        }
+      },
+      {
+        "comment": "",
+        "key": "Ask it to show you something — and watch the ink take shape.",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 147
+        }
+      },
+      {
+        "comment": "",
+        "key": "Tap the ☾ in the top corner, then add your OpenRouter key.",
+        "location": {
+          "startingColumn": 24,
+          "startingLine": 148
         }
       }
     ]

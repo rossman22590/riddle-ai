@@ -13,7 +13,7 @@ struct DiaryView: View {
     private enum Phase {
         case idle        // waiting for the writer
         case drinking    // ink soaking into the page
-        case thinking    // the diary reads the page (nothing shown — just the page)
+        case thinking    // the diary reads the page; faint ink letters stir
         case responding  // the reply is seeping in (and perhaps a memory)
     }
 
@@ -121,8 +121,11 @@ struct DiaryView: View {
                 }
                 .opacity(replyOpacity)
                 .transition(.opacity)
+            } else if phase == .thinking {
+                ThinkingIndicator()
+                    .transition(.opacity)
             }
-            // .idle / .thinking / .drinking show nothing — the loading is invisible.
+            // .idle / .drinking show only the page; .thinking is a faint ink murmur.
         }
         .frame(maxWidth: 760)
         .padding(.horizontal, 44)
@@ -377,7 +380,7 @@ struct DiaryView: View {
         try? await Task.sleep(nanoseconds: 800_000_000)
         withAnimation(.easeOut(duration: 0.4)) { showHint = false }
         beginReply()
-        try? await Task.sleep(nanoseconds: 1_600_000_000)   // invisible wait
+        try? await Task.sleep(nanoseconds: 1_600_000_000)   // ink-stirring wait
         phase = .responding
         let sample = "How curious — your ink still glistens upon the page. Tell me your name, and what brings you to me."
         for character in sample {
