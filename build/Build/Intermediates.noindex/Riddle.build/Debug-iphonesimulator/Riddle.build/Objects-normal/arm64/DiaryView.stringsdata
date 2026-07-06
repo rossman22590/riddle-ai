@@ -1,0 +1,24 @@
+{
+  "source": "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Views/DiaryView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Write upon the page, and the diary will answer.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 109
+        }
+      },
+      {
+        "comment": "",
+        "key": "Tap with two fingers for the guide.",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 112
+        }
+      }
+    ]
+  },
+  "version": 1
+}

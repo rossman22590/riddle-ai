@@ -1,0 +1,48 @@
+{
+  "source": "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Views/HistoryView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "The Diary's Memory",
+        "location": {
+          "startingColumn": 30,
+          "startingLine": 45
+        }
+      },
+      {
+        "comment": "",
+        "key": "What you write to the diary — and what it answers — is kept here.",
+        "location": {
+          "startingColumn": 43,
+          "startingLine": 14
+        }
+      },
+      {
+        "comment": "",
+        "key": "Nothing written yet",
+        "location": {
+          "startingColumn": 25,
+          "startingLine": 12
+        }
+      },
+      {
+        "comment": "",
+        "key": "Close",
+        "location": {
+          "startingColumn": 28,
+          "startingLine": 49
+        }
+      },
+      {
+        "comment": "",
+        "key": "Clear",
+        "location": {
+          "startingColumn": 32,
+          "startingLine": 53
+        }
+      }
+    ]
+  },
+  "version": 1
+}

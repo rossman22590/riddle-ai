@@ -1,0 +1,16 @@
+{
+  "source": "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Views/HandwritingText.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "the diary considers your words",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 154
+        }
+      }
+    ]
+  },
+  "version": 1
+}

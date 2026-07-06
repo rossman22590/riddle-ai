@@ -1,0 +1,209 @@
+{
+  "" : {
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Riddle-primary.dia",
+    "emit-module-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Riddle-primary-emit-module.d",
+    "emit-module-diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Riddle-primary-emit-module.dia",
+    "pch" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Riddle-primary-Bridging-header.pch",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Riddle-primary.swiftdeps"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/App/ContentView.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ContentView.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ContentView.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ContentView.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ContentView.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ContentView.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ContentView.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ContentView.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ContentView~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/App/RiddleApp.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/RiddleApp.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/RiddleApp.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/RiddleApp.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/RiddleApp.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/RiddleApp.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/RiddleApp.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/RiddleApp.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/RiddleApp~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Models/AppSettings.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/AppSettings.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/AppSettings.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/AppSettings.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/AppSettings.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/AppSettings.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/AppSettings.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/AppSettings.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/AppSettings~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Models/DiaryEntry.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryEntry.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryEntry.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryEntry.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryEntry.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryEntry.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryEntry.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryEntry.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryEntry~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Models/DiaryStore.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryStore.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryStore.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryStore.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryStore.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryStore.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryStore.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryStore.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryStore~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Services/HandwritingRecognizer.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingRecognizer.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingRecognizer.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingRecognizer.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingRecognizer.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingRecognizer.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingRecognizer.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingRecognizer.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingRecognizer~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Services/Keychain.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Keychain.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Keychain.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Keychain.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Keychain.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Keychain.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Keychain.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Keychain.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Keychain~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Services/LocalOracle.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/LocalOracle.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/LocalOracle.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/LocalOracle.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/LocalOracle.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/LocalOracle.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/LocalOracle.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/LocalOracle.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/LocalOracle~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Services/OpenRouterOracle.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OpenRouterOracle.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OpenRouterOracle.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OpenRouterOracle.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OpenRouterOracle.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OpenRouterOracle.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OpenRouterOracle.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OpenRouterOracle.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OpenRouterOracle~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Services/Oracle.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Oracle.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Oracle.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Oracle.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Oracle.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Oracle.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Oracle.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Oracle.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Oracle~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Support/FontRegistrar.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/FontRegistrar.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/FontRegistrar.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/FontRegistrar.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/FontRegistrar.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/FontRegistrar.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/FontRegistrar.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/FontRegistrar.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/FontRegistrar~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Support/ParchmentBackground.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ParchmentBackground.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ParchmentBackground.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ParchmentBackground.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ParchmentBackground.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ParchmentBackground.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ParchmentBackground.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ParchmentBackground.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/ParchmentBackground~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Support/Theme.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Theme.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Theme.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Theme.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Theme.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Theme.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Theme.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Theme.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/Theme~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Views/DiaryView.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryView.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryView.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryView.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryView.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryView.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryView.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryView.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/DiaryView~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Views/HandwritingText.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingText.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingText.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingText.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingText.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingText.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingText.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingText.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HandwritingText~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Views/HistoryView.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HistoryView.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HistoryView.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HistoryView.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HistoryView.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HistoryView.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HistoryView.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HistoryView.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/HistoryView~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Views/InkCanvasView.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/InkCanvasView.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/InkCanvasView.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/InkCanvasView.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/InkCanvasView.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/InkCanvasView.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/InkCanvasView.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/InkCanvasView.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/InkCanvasView~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Views/OnboardingView.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OnboardingView.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OnboardingView.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OnboardingView.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OnboardingView.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OnboardingView.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OnboardingView.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OnboardingView.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/OnboardingView~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Views/SettingsView.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/SettingsView.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/SettingsView.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/SettingsView.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/SettingsView.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/SettingsView.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/SettingsView.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/SettingsView.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/SettingsView~partial.swiftmodule"
+  },
+  "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/DerivedSources/GeneratedAssetSymbols.swift" : {
+    "const-values" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftconstvalues",
+    "dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/GeneratedAssetSymbols.d",
+    "diagnostics" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/GeneratedAssetSymbols.dia",
+    "index-unit-output-path" : "/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "llvm-bc" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/GeneratedAssetSymbols.bc",
+    "object" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/GeneratedAssetSymbols.o",
+    "swift-dependencies" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/GeneratedAssetSymbols.swiftdeps",
+    "swiftmodule" : "/Users/rosscohen/Documents/GitHub/riddle-ai/build/Build/Intermediates.noindex/Riddle.build/Debug-iphonesimulator/Riddle.build/Objects-normal/arm64/GeneratedAssetSymbols~partial.swiftmodule"
+  }
+}

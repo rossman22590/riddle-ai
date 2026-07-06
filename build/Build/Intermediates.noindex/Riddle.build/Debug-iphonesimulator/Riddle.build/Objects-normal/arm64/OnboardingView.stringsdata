@@ -1,0 +1,24 @@
+{
+  "source": "/Users/rosscohen/Documents/GitHub/riddle-ai/Riddle/Views/OnboardingView.swift",
+  "tables": {
+    "Localizable": [
+      {
+        "comment": "",
+        "key": "Begin",
+        "location": {
+          "startingColumn": 52,
+          "startingLine": 56
+        }
+      },
+      {
+        "comment": "",
+        "key": "Skip",
+        "location": {
+          "startingColumn": 62,
+          "startingLine": 56
+        }
+      }
+    ]
+  },
+  "version": 1
+}
