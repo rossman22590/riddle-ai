@@ -37,8 +37,11 @@ struct ContentView: View {
         }
         .statusBarHidden(true)          // no iOS clock/battery over the diary — just ink and paper
         .onAppear {
+            DiarySounds.shared.setEnabled(settings.soundEnabled)
             if ProcessInfo.processInfo.arguments.contains("-openSettings") { showSettings = true }
         }
+        .onChange(of: settings.soundEnabled) { _, on in DiarySounds.shared.setEnabled(on) }
+        .onChange(of: showHistory) { _, open in if open { DiarySounds.shared.play("rustle", volume: 0.32) } }
         .sheet(isPresented: $showGuide, onDismiss: {
             switch route {
             case .settings: showSettings = true

@@ -59,9 +59,7 @@ struct HistoryView: View {
                 }
                 Spacer()
                 Button { store.delete(entry) } label: {
-                    Image(systemName: "xmark")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Theme.ink.opacity(0.3))
+                    DrawnX(size: 13, color: Theme.ink.opacity(0.3))
                         .frame(width: 26, height: 26)
                         .contentShape(Rectangle())
                 }

@@ -89,6 +89,7 @@ struct DiaryGate: View {
 
     private func open() {
         UIImpactFeedbackGenerator(style: .rigid).impactOccurred()
+        DiarySounds.shared.play("cover", volume: 0.5)
         withAnimation(.easeInOut(duration: 0.7)) { leaving = true }
         DispatchQueue.main.asyncAfter(deadline: .now() + 0.66) { onOpen() }
     }

@@ -144,8 +144,12 @@ struct DiaryView: View {
         let text = displayReply
         let hasText = !text.isEmpty
         let hasImage = drawnImage != nil
+        // While a drawing is still being conjured we reserve its box and show a
+        // stir there, so the wait before it blooms isn't silent dead air.
+        let awaitingImage = drawnImage == nil && sketching
+        let reserveImage = hasImage || awaitingImage
         let baseFont = Theme.replyUIFont(for: settings.replyHand)
-        let spacing: CGFloat = hasText && hasImage ? 14 : 0
+        let spacing: CGFloat = hasText && reserveImage ? 14 : 0
         // In landscape the page is wide but short — size the ink by the whole
         // width (not the narrow reading column), and let it claim far more of
         // the height so a drawing never shrinks to a stamp.
@@ -153,7 +157,7 @@ struct DiaryView: View {
         let maxImageWidth = min(size.width - 48,
                                 Theme.isPad ? (landscape ? 900 : 620) : (landscape ? 620 : 340))
         let preferredImageHeight: CGFloat = {
-            guard hasImage else { return 0 }
+            guard reserveImage else { return 0 }
             // A cap only — if the reply text is long it takes its share first and
             // the image shrinks to fit; when it's a short caption (as it is when
             // he draws) the ink grows into most of the page, even in landscape.
@@ -166,7 +170,7 @@ struct DiaryView: View {
         }()
 
         guard hasText else {
-            let imageSize = fittedImageSize(maxWidth: maxImageWidth, maxHeight: preferredImageHeight)
+            let imageSize = imageBoxSize(maxWidth: maxImageWidth, maxHeight: preferredImageHeight, awaitingImage: awaitingImage)
             return ReplyFit(
                 width: max(width, imageSize.width + 32),
                 textWidth: textWidth,
@@ -187,7 +191,8 @@ struct DiaryView: View {
             maxImageWidth: maxImageWidth,
             preferredImageHeight: preferredImageHeight,
             spacing: spacing,
-            availableHeight: availableHeight
+            availableHeight: availableHeight,
+            awaitingImage: awaitingImage
         )
 
         for _ in 0..<12 {
@@ -200,7 +205,8 @@ struct DiaryView: View {
                 maxImageWidth: maxImageWidth,
                 preferredImageHeight: preferredImageHeight,
                 spacing: spacing,
-                availableHeight: availableHeight
+                availableHeight: availableHeight,
+                awaitingImage: awaitingImage
             )
 
             if candidate.contentHeight <= availableHeight {
@@ -221,7 +227,8 @@ struct DiaryView: View {
                 maxImageWidth: maxImageWidth,
                 preferredImageHeight: preferredImageHeight,
                 spacing: spacing,
-                availableHeight: availableHeight
+                availableHeight: availableHeight,
+                awaitingImage: awaitingImage
             )
         }
 
@@ -230,7 +237,7 @@ struct DiaryView: View {
             textWidth: textWidth,
             font: best.font,
             imageSize: best.imageSize,
-            spacing: hasImage ? spacing : 0,
+            spacing: reserveImage ? spacing : 0,
             contentHeight: min(availableHeight, max(1, best.contentHeight))
         )
     }
@@ -243,17 +250,27 @@ struct DiaryView: View {
         maxImageWidth: CGFloat,
         preferredImageHeight: CGFloat,
         spacing: CGFloat,
-        availableHeight: CGFloat
+        availableHeight: CGFloat,
+        awaitingImage: Bool
     ) -> (font: UIFont, imageSize: CGSize, contentHeight: CGFloat) {
         let pointSize = max(10, baseFont.pointSize * scale)
         let font = UIFont(name: baseFont.fontName, size: pointSize) ?? baseFont.withSize(pointSize)
         let textHeight = makeInkLayout(text: text, font: font, maxWidth: textWidth).size.height
-        let hasImage = drawnImage != nil
-        let remainingForImage = hasImage ? max(0, availableHeight - textHeight - spacing) : 0
-        let imageHeight = hasImage ? min(preferredImageHeight, remainingForImage) : 0
-        let imageSize = fittedImageSize(maxWidth: maxImageWidth, maxHeight: imageHeight)
-        let total = textHeight + (hasImage && imageSize.height > 0 ? spacing : 0) + imageSize.height
+        let reserve = drawnImage != nil || awaitingImage
+        let remainingForImage = reserve ? max(0, availableHeight - textHeight - spacing) : 0
+        let imageHeight = reserve ? min(preferredImageHeight, remainingForImage) : 0
+        let imageSize = imageBoxSize(maxWidth: maxImageWidth, maxHeight: imageHeight, awaitingImage: awaitingImage)
+        let total = textHeight + (reserve && imageSize.height > 0 ? spacing : 0) + imageSize.height
         return (font, imageSize, total)
+    }
+
+    /// The box for the drawing — the real image once it exists, or a square
+    /// placeholder (for the stir) while it is still being conjured.
+    private func imageBoxSize(maxWidth: CGFloat, maxHeight: CGFloat, awaitingImage: Bool) -> CGSize {
+        if drawnImage != nil { return fittedImageSize(maxWidth: maxWidth, maxHeight: maxHeight) }
+        guard awaitingImage, maxWidth > 1, maxHeight > 1 else { return .zero }
+        let side = min(maxWidth, maxHeight)
+        return CGSize(width: side, height: side)
     }
 
     private func fittedImageSize(maxWidth: CGFloat, maxHeight: CGFloat) -> CGSize {
@@ -286,17 +303,22 @@ struct DiaryView: View {
                             uiFont: fit.font,
                             maxWidth: fit.textWidth,
                             color: Theme.replyInk,
+                            haptics: settings.hapticsEnabled,
                             onComplete: textRevealComplete
                         )
                         .id(responseID)
                         .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    // A memory, surfacing directly from the paper.
+                    // A memory, surfacing directly from the paper — or, while it
+                    // is still forming, the page stirring where it will bloom.
                     if let image = drawnImage {
                         InkBloomImage(image: image, progress: drawProgress)
                             .frame(width: fit.imageSize.width, height: fit.imageSize.height)
                             .offset(y: (1 - drawProgress) * 18)
+                    } else if sketching, fit.imageSize.height > 1 {
+                        PageStir()
+                            .frame(width: fit.imageSize.width, height: fit.imageSize.height)
                     }
                 }
                 .frame(width: fit.width, height: fit.contentHeight)
@@ -392,6 +414,7 @@ struct DiaryView: View {
         let interruptedTurn = turn
         pauseWork?.cancel()
         replyDismissWork?.cancel()
+        DiarySounds.shared.stop("quill", fade: 0.15)
         replyHeld = false
         sleeping = false
         phase = .idle             // the page listens again while his ink fades
@@ -454,6 +477,7 @@ struct DiaryView: View {
         fadeProgress = 0
         canvas.clear()
         haptic(.soft)
+        DiarySounds.shared.play("drink", volume: 0.4)
 
         withAnimation(.easeIn(duration: drinkDuration)) { fadeProgress = 1 }
 
@@ -599,8 +623,8 @@ struct DiaryView: View {
             }
         } catch {
             guard myTurn == turn else { return }
-            let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            responseText = "…the ink will not flow — \(message)"
+            // Stay in character — never spill a raw error onto the page.
+            responseText = "…the ink scatters before it reaches the page. Rest your pen a moment, then write to me again."
             streamFinished = true
             replyRevealComplete = false
             imageRevealComplete = true
@@ -691,6 +715,7 @@ struct DiaryView: View {
 
     private func textRevealComplete() {
         replyRevealComplete = true
+        DiarySounds.shared.stop("quill")
         scheduleReplyDismiss()
         scheduleIdleNudge()
     }
@@ -717,6 +742,7 @@ struct DiaryView: View {
 
     private func returnToIdle() {
         replyDismissWork?.cancel()
+        DiarySounds.shared.stop("quill", fade: 0.15)
         phase = .idle
         responseText = ""
         streamFinished = false
@@ -1132,54 +1158,15 @@ private struct InkBloomImage: View {
     let progress: Double
 
     // The image is already inked onto the page's own cream by InkImage, so it is
-    // drawn OPAQUE — never .blendMode(.multiply), which inside the reply's
-    // .opacity() group flashes white and darkens the cream into a faint box. The
-    // bloom mask alone does the reveal; the cream matches the page seamlessly.
+    // drawn OPAQUE with a plain ink-rising fade — no mask, no white overlay, no
+    // blobs. The cream matches the page, so it simply surfaces from the paper.
     var body: some View {
         Image(uiImage: image)
             .resizable()
             .scaledToFit()
-            .opacity(0.24 + progress * 0.76)
-            .blur(radius: (1 - progress) * 2.8)
-            .scaleEffect(0.992 + progress * 0.008)
-            .mask {
-                InkBloomMask(progress: progress)
-            }
-    }
-}
-
-private struct InkBloomMask: View {
-    let progress: Double
-
-    var body: some View {
-        GeometryReader { proxy in
-            ZStack {
-                Color.white.opacity(max(0, (progress - 0.82) / 0.18))
-
-                ForEach(0..<96, id: \.self) { index in
-                    let threshold = Double(seed(index, 17)) * 0.72
-                    let local = min(1, max(0, (progress - threshold) / 0.34))
-                    if local > 0 {
-                        Ellipse()
-                            .fill(Color.white.opacity(local))
-                            .frame(
-                                width: (18 + seed(index, 31) * 150) * local,
-                                height: (12 + seed(index, 47) * 110) * local
-                            )
-                            .blur(radius: 5 * (1 - local))
-                            .rotationEffect(.degrees(Double(seed(index, 59) * 180)))
-                            .position(
-                                x: seed(index, 71) * proxy.size.width,
-                                y: (0.08 + seed(index, 89) * 0.84) * proxy.size.height
-                            )
-                    }
-                }
-            }
-        }
-    }
-
-    private func seed(_ index: Int, _ salt: Int) -> CGFloat {
-        CGFloat((index * 137 + salt * 271) % 997) / 997
+            .opacity(progress)
+            .blur(radius: (1 - progress) * 3)
+            .scaleEffect(0.99 + progress * 0.01)
     }
 }
 

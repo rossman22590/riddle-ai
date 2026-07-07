@@ -1,6 +1,7 @@
 import SwiftUI
 import Combine
 import CoreText
+import UIKit
 
 /// The diary's hand, laid out as real glyph outlines (via Core Text) so the
 /// reply can be *drawn* — each letter's contour traced by a moving nib — rather
@@ -104,12 +105,15 @@ struct RevealingHandwriting: View {
     var uiFont: UIFont
     var maxWidth: CGFloat? = nil
     var color: Color
+    var haptics: Bool = false
     var onComplete: () -> Void
 
     @State private var revealed: Double = 0
     @State private var completed = false
     @State private var layout = InkLayout(paths: [], frames: [], size: .zero)
     @State private var characters: [Character] = []
+    @State private var lastHapticGlyph = 0
+    private let hapticGen = UIImpactFeedbackGenerator(style: .light)
 
     private let glyphsPerSecond: Double = 12.2
     private let tick = Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()
@@ -133,6 +137,7 @@ struct RevealingHandwriting: View {
         characters = Array(text)
         revealed = 0
         completed = false
+        lastHapticGlyph = 0
     }
 
     private func advance() {
@@ -142,6 +147,15 @@ struct RevealingHandwriting: View {
             let unevenness = 0.82 + 0.24 * (0.5 + 0.5 * sin(revealed * 2.73))
             let hesitation = hesitationMultiplier(at: Int(revealed))
             revealed = min(target, revealed + (glyphsPerSecond * rhythm * unevenness * hesitation) / 60.0)
+
+            // A whisper of texture as the nib moves — the pen felt, not just seen.
+            if haptics {
+                let glyph = Int(revealed)
+                if glyph > lastHapticGlyph {
+                    lastHapticGlyph = glyph
+                    if glyph % 3 == 0 { hapticGen.impactOccurred(intensity: 0.28) }
+                }
+            }
         }
         if !completed, streamFinished, target > 0, revealed >= target {
             completed = true

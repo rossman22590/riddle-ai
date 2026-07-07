@@ -43,6 +43,8 @@ struct SettingsView: View {
     private var voiceSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             DiaryHeading("The voice")
+            DiaryText("A voice reaches these pages from beyond. Give the diary its key, and it wakes.",
+                      size: 13, opacity: 0.55)
             InkField(placeholder: "sk-or-…", text: $keyDraft, secure: true)
 
             HStack(spacing: 20) {
@@ -88,11 +90,7 @@ struct SettingsView: View {
     private var conjuringSection: some View {
         VStack(alignment: .leading, spacing: 12) {
             DiaryHeading("Ink conjuring")
-            Toggle(isOn: $settings.drawingEnabled) {
-                Text("Let the diary draw")
-                    .font(.system(size: 16, weight: .regular, design: .serif))
-                    .foregroundStyle(Theme.ink)
-            }
+            InkCheck(label: "Let the diary draw", isOn: $settings.drawingEnabled)
             DiaryText("When you ask it to show something — or simply draw — the diary works in black ink on the page.",
                       size: 13, opacity: 0.5)
         }
@@ -115,12 +113,9 @@ struct SettingsView: View {
             DiaryHeading("The page")
             DiaryText("The page drinks your ink after \(String(format: "%.1f", settings.pauseDelay)) seconds of rest.",
                       size: 14, opacity: 0.7)
-            Slider(value: $settings.pauseDelay, in: 1.0...4.0, step: 0.1)
-            Toggle(isOn: $settings.hapticsEnabled) {
-                Text("Let the page answer with touch")
-                    .font(.system(size: 16, weight: .regular, design: .serif))
-                    .foregroundStyle(Theme.ink)
-            }
+            InkSlider(value: $settings.pauseDelay, range: 1.0...4.0, step: 0.1)
+            InkCheck(label: "Let the page answer with touch", isOn: $settings.hapticsEnabled)
+            InkCheck(label: "Let the diary breathe with sound", isOn: $settings.soundEnabled)
         }
     }
 
@@ -137,9 +132,7 @@ struct SettingsView: View {
                     .font(.system(size: 16, weight: .regular, design: .serif))
                     .foregroundStyle(Theme.ink)
                 Spacer()
-                Image(systemName: "chevron.up.chevron.down")
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(Theme.ink.opacity(0.4))
+                InkCaret()
             }
             .padding(.vertical, 8)
             .overlay(Rectangle().fill(Theme.ink.opacity(0.14)).frame(height: 1), alignment: .bottom)

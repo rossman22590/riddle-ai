@@ -11,6 +11,7 @@ final class AppSettings: ObservableObject {
     @Published var replyHand: String   { didSet { defaults.set(replyHand, forKey: Keys.hand) } }
     @Published var pauseDelay: Double   { didSet { defaults.set(pauseDelay, forKey: Keys.pause) } }
     @Published var hapticsEnabled: Bool { didSet { defaults.set(hapticsEnabled, forKey: Keys.haptics) } }
+    @Published var soundEnabled: Bool   { didSet { defaults.set(soundEnabled, forKey: Keys.sound) } }
     @Published var drawingEnabled: Bool { didSet { defaults.set(drawingEnabled, forKey: Keys.drawing) } }
     @Published var imageModel: String   { didSet { defaults.set(imageModel, forKey: Keys.imageModel) } }
 
@@ -29,6 +30,7 @@ final class AppSettings: ObservableObject {
         static let hand = "replyHand"
         static let pause = "pauseDelay"
         static let haptics = "hapticsEnabled"
+        static let sound = "soundEnabled"
         static let drawing = "drawingEnabled"
         static let imageModel = "imageModel"
         static let migratedModel = "migratedModelToHaiku"
@@ -43,6 +45,7 @@ final class AppSettings: ObservableObject {
         replyHand      = defaults.string(forKey: Keys.hand) ?? "Dancing Script"
         pauseDelay     = defaults.object(forKey: Keys.pause) as? Double ?? 2.8
         hapticsEnabled = defaults.object(forKey: Keys.haptics) as? Bool ?? true
+        soundEnabled   = defaults.object(forKey: Keys.sound) as? Bool ?? true
         drawingEnabled = defaults.object(forKey: Keys.drawing) as? Bool ?? true
         imageModel     = defaults.string(forKey: Keys.imageModel) ?? Self.defaultImageModel
         apiKeyIsSet    = !(Keychain.load(key: Keys.apiKey) ?? "").isEmpty
