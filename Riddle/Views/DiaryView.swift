@@ -8,6 +8,7 @@ struct DiaryView: View {
     @EnvironmentObject private var settings: AppSettings
     @EnvironmentObject private var store: DiaryStore
     @EnvironmentObject private var session: DiarySession
+    @EnvironmentObject private var soul: MemorySoul
 
     var onSummonGuide: () -> Void = {}
 
@@ -41,10 +42,15 @@ struct DiaryView: View {
     @State private var fadeProgress: Double = 0
     @State private var dismissScheduled = false
 
-    @State private var showHint = true
+    @State private var introVisible = false
+    @State private var introText = ""
+    @State private var introFinished = false
+    @State private var introID = UUID()
+    @State private var introOpacity: Double = 0
+    @State private var introDismissWork: DispatchWorkItem?
     @State private var pauseWork: DispatchWorkItem?
     @State private var idleNudgeWork: DispatchWorkItem?
-    @State private var idleNudgeShown = false
+    @State private var idleNudgeCount = 0
     @State private var sleeping = false
 
     private let drinkDuration = 0.98
@@ -52,6 +58,9 @@ struct DiaryView: View {
     private let slowReplyFade = 6.0
     private let replyLinger: TimeInterval = 30
     private let initiativeDelay: TimeInterval = 120
+    private let maxIdleNudges = 4
+    private let introLinger: TimeInterval = 5
+    private let introFade = 3.0
 
     var body: some View {
         ZStack {
@@ -83,13 +92,20 @@ struct DiaryView: View {
             .allowsHitTesting(phase != .drinking)
             .ignoresSafeArea()
 
-            hintLayer
+            toolToggle
+            introLayer
         }
         .task {
             if ProcessInfo.processInfo.arguments.contains("-riddleDemo") { await runDemo() }
         }
-        .onAppear { scheduleIdleNudge() }
-        .onDisappear { idleNudgeWork?.cancel() }
+        .onAppear {
+            showIntroMessage()
+            scheduleIdleNudge()
+        }
+        .onDisappear {
+            idleNudgeWork?.cancel()
+            introDismissWork?.cancel()
+        }
     }
 
     private var displayReply: String {
@@ -98,6 +114,14 @@ struct DiaryView: View {
 
     private var hasVisibleReply: Bool {
         !displayReply.isEmpty || drawnImage != nil
+    }
+
+    private var introMessage: String {
+        if settings.apiKeyIsSet {
+            return "Write upon the page, and the diary will answer.\nAsk it to show you something."
+        } else {
+            return "The diary is asleep.\nTap the moon in the corner to give it a voice."
+        }
     }
 
     private func replyWidth(in size: CGSize) -> CGFloat {
@@ -145,7 +169,7 @@ struct DiaryView: View {
                         RevealingHandwriting(
                             text: displayReply,
                             streamFinished: streamFinished,
-                            font: Theme.replyFont(for: settings.replyHand),
+                            uiFont: Theme.replyUIFont(for: settings.replyHand),
                             color: Theme.replyInk,
                             onComplete: textRevealComplete
                         )
@@ -153,7 +177,7 @@ struct DiaryView: View {
                         .fixedSize(horizontal: false, vertical: true)
                     }
 
-                    // A memory, surfacing in ink — shown in a faint window-frame.
+                    // A memory, surfacing directly from the paper.
                     if let image = drawnImage {
                         let hasReply = !displayReply.isEmpty
                         Image(uiImage: image)
@@ -180,23 +204,51 @@ struct DiaryView: View {
     }
 
     @ViewBuilder
-    private var hintLayer: some View {
-        if showHint && phase == .idle {
-            VStack(spacing: 8) {
+    private var toolToggle: some View {
+        VStack {
+            HStack {
+                Button {
+                    canvas.toggleEraser()
+                    haptic(canvas.isErasing ? .rigid : .soft)
+                } label: {
+                    Image(systemName: canvas.isErasing ? "eraser.fill" : "pencil.tip")
+                        .font(.system(size: 16, weight: .medium))
+                        .foregroundStyle(Theme.ink.opacity(canvas.isErasing ? 0.78 : 0.38))
+                        .frame(width: 42, height: 42)
+                        .background(Theme.paper.opacity(canvas.isErasing ? 0.96 : 0.76), in: Circle())
+                        .overlay(Circle().stroke(Theme.ink.opacity(canvas.isErasing ? 0.24 : 0.1), lineWidth: 1))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(canvas.isErasing ? "Erase ink" : "Write ink")
                 Spacer()
-                Text(settings.apiKeyIsSet
-                     ? "Write upon the page, and the diary will answer."
-                     : "The diary is asleep. Tap the corner to give it a voice.")
-                    .font(.system(size: Theme.isPad ? 20 : 16, weight: .regular, design: .serif).italic())
-                    .foregroundStyle(Theme.faint)
-                Text(settings.apiKeyIsSet
-                     ? "Ask it to show you something — and watch the ink take shape."
-                     : "Tap the ☾ in the top corner, then add your OpenRouter key.")
-                    .font(.system(size: Theme.isPad ? 15 : 13, weight: .regular, design: .serif))
-                    .foregroundStyle(Theme.faint.opacity(0.7))
-                    .padding(.bottom, Theme.isPad ? 76 : 52)
             }
-            .multilineTextAlignment(.center)
+            Spacer()
+        }
+        .padding(.leading, 18)
+        .padding(.top, 6)
+    }
+
+    @ViewBuilder
+    private var introLayer: some View {
+        if introVisible && phase == .idle && !hasVisibleReply {
+            GeometryReader { proxy in
+                VStack {
+                    Spacer()
+                    RevealingHandwriting(
+                        text: introText,
+                        streamFinished: introFinished,
+                        uiFont: Theme.replyUIFont(for: settings.replyHand),
+                        color: Theme.replyInk.opacity(0.55),
+                        onComplete: introRevealComplete
+                    )
+                    .id(introID)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(width: replyWidth(in: proxy.size))
+                    Spacer()
+                }
+                .frame(width: proxy.size.width, height: proxy.size.height)
+                .opacity(introOpacity)
+            }
             .transition(.opacity)
             .allowsHitTesting(false)
         }
@@ -204,8 +256,40 @@ struct DiaryView: View {
 
     // MARK: - Flow
 
+    private func showIntroMessage() {
+        guard !ProcessInfo.processInfo.arguments.contains("-riddleDemo") else { return }
+        guard !introVisible, phase == .idle, !hasVisibleReply else { return }
+        introDismissWork?.cancel()
+        introText = introMessage
+        introFinished = true
+        introID = UUID()
+        introOpacity = 0
+        introVisible = true
+        withAnimation(.easeInOut(duration: 0.8)) { introOpacity = 1 }
+    }
+
+    private func introRevealComplete() {
+        introDismissWork?.cancel()
+        let work = DispatchWorkItem { hideIntroMessage(duration: introFade) }
+        introDismissWork = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + introLinger, execute: work)
+    }
+
+    private func hideIntroMessage(duration: Double) {
+        introDismissWork?.cancel()
+        guard introVisible else { return }
+        withAnimation(.easeInOut(duration: duration)) { introOpacity = 0 }
+        DispatchQueue.main.asyncAfter(deadline: .now() + duration + 0.05) {
+            guard introOpacity == 0 else { return }
+            introVisible = false
+            introText = ""
+            introFinished = false
+        }
+    }
+
     private func inkChanged() {
         cancelIdleNudge()
+        hideIntroMessage(duration: 0.35)
 
         // Writing over the diary's words makes his ink vanish — write cleanly.
         if phase == .responding || phase == .thinking {
@@ -213,7 +297,6 @@ struct DiaryView: View {
         }
         guard phase == .idle else { return }   // ignore mid-drink
 
-        if showHint { withAnimation(.easeOut(duration: 0.4)) { showHint = false } }
         scheduleDrink()
     }
 
@@ -232,15 +315,15 @@ struct DiaryView: View {
         sketching = false
         dismissScheduled = false
         fadeImage = nil
-        showHint = false
+        hideIntroMessage(duration: 0.35)
 
         if shouldFadeReply {
             clearingReply = true
-            withAnimation(.easeIn(duration: replyFade)) {
+            withAnimation(.easeOut(duration: 0.22)) {   // his ink retreats quickly beneath yours
                 replyOpacity = 0
                 drawProgress = 0
             }
-            DispatchQueue.main.asyncAfter(deadline: .now() + replyFade) {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.24) {
                 guard turn == interruptedTurn, phase == .idle else { return }
                 responseText = ""
                 streamFinished = false
@@ -271,6 +354,7 @@ struct DiaryView: View {
 
         cancelIdleNudge()
         replyDismissWork?.cancel()
+        hideIntroMessage(duration: 0.35)
         replyHeld = false
         replyAnchor = canvas.inkBounds
         let summonsGuide = canvas.looksLikeQuestionMark()
@@ -311,21 +395,42 @@ struct DiaryView: View {
         beginReply()
 
         let oracle = OpenRouterOracle(apiKey: settings.apiKey, model: settings.model)
+        let profile = soul.profile()
 
         do {
+            // First pass: the live conversation + the writer's soul (always known,
+            // so most turns need no second round-trip).
             var full = try await oracle.respond(
                 imagePNG: png,
                 history: session.turns,
+                memoryProfile: profile,
                 allowSketch: settings.drawingEnabled
             ) { _ in
                 guard myTurn == turn else { return }
             }
             guard myTurn == turn else { return }   // interrupted by fresh writing
             let firstRead = extractRead(full)
-            if let webQuery = extractWebRequest(full) ?? freshTraceQuery(from: firstRead) {
+
+            if let recallQuery = extractRecall(full) {
+                // Rare: he wants the exact words of a specific past page.
+                showGatheringFragment(sanitize(full), myTurn: myTurn)
+                let recalled = store.recall(recallQuery)
                 full = try await oracle.respond(
                     imagePNG: png,
                     history: session.turns,
+                    memoryProfile: profile,
+                    preservedMemory: recalled,
+                    allowSketch: settings.drawingEnabled
+                ) { _ in
+                    guard myTurn == turn else { return }
+                }
+                guard myTurn == turn else { return }
+            } else if let webQuery = extractWebRequest(full) ?? freshTraceQuery(from: firstRead) {
+                showGatheringFragment(sanitize(full), myTurn: myTurn)
+                full = try await oracle.respond(
+                    imagePNG: png,
+                    history: session.turns,
+                    memoryProfile: profile,
                     allowSketch: settings.drawingEnabled,
                     webQuery: webQuery
                 ) { _ in
@@ -335,23 +440,33 @@ struct DiaryView: View {
             }
 
             let subject = extractSketch(full)
+            let redrawInstruction = extractRedraw(full)
             let writer = extractRead(full)
             let cleaned = sanitize(full)
 
-            guard !cleaned.isEmpty || subject != nil else {
+            guard !cleaned.isEmpty || subject != nil || redrawInstruction != nil else {
                 returnToIdle()
                 return
             }
 
+            // Quietly distil what he learned about the writer into their soul.
+            soul.absorb(extractMemory(full))
+
             responseText = cleaned
             streamFinished = true
+            responseID = UUID()               // fresh reveal, even if a wisp was shown while waiting
             withAnimation(.easeInOut(duration: 0.7)) { phase = .responding }
 
-            store.add(reply: cleaned, ink: Self.historyInk(from: image))
+            store.add(writer: writer, reply: cleaned, ink: Self.historyInk(from: image))
             session.add(writer: writer ?? "", reply: cleaned)
             haptic(.rigid)
 
-            if let subject, settings.drawingEnabled {
+            if let redrawInstruction, settings.drawingEnabled {
+                // Refine the writer's own drawing (image-to-image).
+                expectsSketch = true
+                sketching = true
+                Task { await conjureEdit(instruction: redrawInstruction, source: png, myTurn: myTurn) }
+            } else if let subject, settings.drawingEnabled {
                 expectsSketch = true
                 sketching = true
                 Task { await conjure(subject: subject, myTurn: myTurn) }
@@ -374,6 +489,30 @@ struct DiaryView: View {
         let oracle = OpenRouterOracle(apiKey: settings.apiKey, model: settings.model)
         do {
             let data = try await oracle.draw(subject: subject, model: settings.imageModel)
+            guard myTurn == turn else { return }
+            guard let ink = InkImage.inkify(data) else {
+                throw OracleError.badResponse("the ink would not take shape")
+            }
+            sketching = false
+            drawnImage = ink
+            drawProgress = 0
+            withAnimation(.easeOut(duration: 1.7)) { drawProgress = 1 }
+            haptic(.rigid)
+            scheduleReplyDismiss()
+            scheduleIdleNudge()
+        } catch {
+            guard myTurn == turn else { return }
+            sketching = false
+            expectsSketch = false
+            scheduleReplyDismiss()
+        }
+    }
+
+    @MainActor
+    private func conjureEdit(instruction: String, source: Data, myTurn: Int) async {
+        let oracle = OpenRouterOracle(apiKey: settings.apiKey, model: settings.model)
+        do {
+            let data = try await oracle.redraw(instruction: instruction, source: source, model: settings.imageModel)
             guard myTurn == turn else { return }
             guard let ink = InkImage.inkify(data) else {
                 throw OracleError.badResponse("the ink would not take shape")
@@ -452,7 +591,6 @@ struct DiaryView: View {
         drawnImage = nil
         drawProgress = 0
         dismissScheduled = false
-        withAnimation(.easeIn(duration: 0.6)) { showHint = true }
         scheduleIdleNudge()
     }
 
@@ -479,11 +617,11 @@ struct DiaryView: View {
         pauseWork?.cancel()
         replyDismissWork?.cancel()
         cancelIdleNudge()
+        hideIntroMessage(duration: 0.35)
         canvas.clear()
         sleeping = true
         replyHeld = true
         clearingReply = false
-        showHint = false
         responseText = "The diary sleeps."
         streamFinished = true
         responseID = UUID()
@@ -499,7 +637,7 @@ struct DiaryView: View {
 
     private func scheduleIdleNudge() {
         idleNudgeWork?.cancel()
-        guard settings.apiKeyIsSet, !idleNudgeShown else { return }
+        guard settings.apiKeyIsSet, idleNudgeCount < maxIdleNudges else { return }
         guard phase == .idle || phase == .responding else { return }
 
         let work = DispatchWorkItem { showIdleNudge() }
@@ -510,19 +648,19 @@ struct DiaryView: View {
     private func cancelIdleNudge() {
         idleNudgeWork?.cancel()
         idleNudgeWork = nil
-        idleNudgeShown = false
+        idleNudgeCount = 0
     }
 
     private func showIdleNudge() {
-        guard settings.apiKeyIsSet, !idleNudgeShown else { return }
+        guard settings.apiKeyIsSet, idleNudgeCount < maxIdleNudges else { return }
         guard phase == .idle || phase == .responding else { return }
         guard canvas.isEmpty else {
             scheduleIdleNudge()
             return
         }
 
-        idleNudgeShown = true
-        showHint = false
+        idleNudgeCount += 1
+        hideIntroMessage(duration: 0.35)
         let line = spontaneousLine()
 
         if phase == .responding, hasVisibleReply {
@@ -543,6 +681,7 @@ struct DiaryView: View {
             }
         }
         haptic(.soft)
+        scheduleIdleNudge()
     }
 
     private func spontaneousLine() -> String {
@@ -566,7 +705,35 @@ struct DiaryView: View {
     // MARK: - Helpers
 
     private func sanitize(_ text: String) -> String {
-        stripVisibleCitations(from: stripHiddenTags(from: text))
+        stripMarkdown(from: stripBracketDebris(from: stripVisibleCitations(from: stripHiddenTags(from: text))))
+    }
+
+    /// The diary writes in ink, not markup. Strip any markdown the model slips in
+    /// (emphasis, code ticks, headings, bullets, links) so only clean prose is inked.
+    private func stripMarkdown(from text: String) -> String {
+        var result = text
+
+        // [label](url) -> label
+        result = result.replacingOccurrences(
+            of: #"\[([^\]]+)\]\([^)]*\)"#, with: "$1", options: .regularExpression)
+
+        // Emphasis / strikethrough / inline code markers.
+        for token in ["**", "__", "~~", "`"] {
+            result = result.replacingOccurrences(of: token, with: "")
+        }
+        result = result.replacingOccurrences(of: "*", with: "")
+        result = result.replacingOccurrences(of: "_", with: "")
+
+        // Line-leading markdown: headings, quotes, bullets, numbered lists.
+        let lines = result.components(separatedBy: "\n").map { line -> String in
+            var stripped = line
+            for pattern in [#"^\s{0,3}#{1,6}\s+"#, #"^\s{0,3}>\s?"#, #"^\s{0,3}[-+•·]\s+"#, #"^\s{0,3}\d+\.\s+"#] {
+                stripped = stripped.replacingOccurrences(of: pattern, with: "", options: .regularExpression)
+            }
+            return stripped
+        }
+
+        return lines.joined(separator: "\n").trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
     private func extractSketch(_ text: String) -> String? {
@@ -583,6 +750,42 @@ struct DiaryView: View {
         let lowered = cleaned.lowercased()
         guard !["none", "no", "false", "n/a", "not needed"].contains(lowered) else { return nil }
         return cleaned.isEmpty ? nil : cleaned
+    }
+
+    private func extractRecall(_ text: String) -> String? {
+        guard let query = extractHiddenTag("RECALL", from: text) else { return nil }
+        let cleaned = query.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lowered = cleaned.lowercased()
+        guard !["none", "no", "false", "n/a", "not needed", "nothing"].contains(lowered) else { return nil }
+        return cleaned.isEmpty ? nil : cleaned
+    }
+
+    private func extractRedraw(_ text: String) -> String? {
+        guard let instruction = extractHiddenTag("REDRAW", from: text) else { return nil }
+        let cleaned = instruction.trimmingCharacters(in: .whitespacesAndNewlines)
+        let lowered = cleaned.lowercased()
+        guard !["none", "no", "false", "n/a", "not needed", "nothing"].contains(lowered) else { return nil }
+        return cleaned.isEmpty ? nil : cleaned
+    }
+
+    private func extractMemory(_ text: String) -> String? {
+        guard let facts = extractHiddenTag("MEMORY", from: text) else { return nil }
+        let cleaned = facts.trimmingCharacters(in: .whitespacesAndNewlines)
+        return cleaned.isEmpty ? nil : cleaned
+    }
+
+    /// While a second pass runs, show his first-pass wisp — ink beginning to move
+    /// — so the wait feels alive rather than dead. Only a short fragment.
+    private func showGatheringFragment(_ fragment: String, myTurn: Int) {
+        guard myTurn == turn else { return }
+        let wisp = fragment.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !wisp.isEmpty, wisp.count <= 64 else { return }
+        replyDismissWork?.cancel()
+        dismissScheduled = false
+        responseText = wisp
+        streamFinished = false
+        responseID = UUID()
+        withAnimation(.easeInOut(duration: 0.5)) { phase = .responding }
     }
 
     private func freshTraceQuery(from text: String?) -> String? {
@@ -627,7 +830,7 @@ struct DiaryView: View {
                 cleaned.removeSubrange(start.lowerBound..<cleaned.endIndex)
             }
         }
-        for marker in ["[READ:", "[SKETCH:", "[WEB:", "READ:", "SKETCH:", "WEB:"] {
+        for marker in ["[READ:", "[SKETCH:", "[WEB:", "[RECALL:", "[REDRAW:", "[MEMORY:", "READ:", "SKETCH:", "WEB:", "RECALL:", "REDRAW:", "MEMORY:"] {
             if let range = cleaned.range(of: marker, options: .caseInsensitive) {
                 cleaned.removeSubrange(range.lowerBound..<cleaned.endIndex)
             }
@@ -648,7 +851,7 @@ struct DiaryView: View {
             options: .regularExpression
         )
         cleaned = cleaned.replacingOccurrences(
-            of: "\\s*\\[[0-9]+\\]",
+            of: "\\s*\\[[0-9,\\s]+\\]",
             with: "",
             options: .regularExpression
         )
@@ -658,6 +861,32 @@ struct DiaryView: View {
             options: .regularExpression
         )
         return cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+    }
+
+    private func stripBracketDebris(from text: String) -> String {
+        var cleaned = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        let patterns = [
+            "\\s*\\[(?:source|sources|citation|citations)[^\\]]*\\]\\s*$",
+            "\\s*\\[[^\\]\\n]{0,120}$",
+            "\\s*【[^】\\n]{0,120}$",
+            "\\s*[\\[\\]【】]+\\s*$"
+        ]
+
+        var changed = true
+        while changed {
+            let before = cleaned
+            for pattern in patterns {
+                cleaned = cleaned.replacingOccurrences(
+                    of: pattern,
+                    with: "",
+                    options: [.regularExpression, .caseInsensitive]
+                )
+            }
+            cleaned = cleaned.trimmingCharacters(in: .whitespacesAndNewlines)
+            changed = cleaned != before
+        }
+
+        return cleaned
     }
 
     private static func historyInk(from image: UIImage) -> Data? {
@@ -672,7 +901,7 @@ struct DiaryView: View {
     @MainActor
     private func runDemo() async {
         try? await Task.sleep(nanoseconds: 800_000_000)
-        withAnimation(.easeOut(duration: 0.4)) { showHint = false }
+        hideIntroMessage(duration: 0.35)
         beginReply()
         try? await Task.sleep(nanoseconds: 1_600_000_000)   // silent wait
         let sample = "How curious — your ink still glistens upon the page. Tell me your name, and what brings you to me."

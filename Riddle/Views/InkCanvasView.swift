@@ -1,10 +1,16 @@
 import SwiftUI
 import PencilKit
+import UIKit
+
+private let diaryInkWidth: CGFloat = 6
 
 /// Bridges the PencilKit canvas to SwiftUI, and exposes snapshot/clear so the
 /// diary can "drink" the ink.
 final class CanvasController: ObservableObject {
     weak var canvas: PKCanvasView?
+    @Published private(set) var isErasing = false
+
+    private var inkColor: UIColor = .black
 
     var isEmpty: Bool { canvas?.drawing.strokes.isEmpty ?? true }
 
@@ -21,7 +27,43 @@ final class CanvasController: ObservableObject {
         return canvas.drawing.image(from: bounds, scale: UIScreen.main.scale)
     }
 
-    func clear() { canvas?.drawing = PKDrawing() }
+    func clear() {
+        canvas?.drawing = PKDrawing()
+        setInk()
+    }
+
+    func attach(to canvas: PKCanvasView, inkColor: UIColor) {
+        self.canvas = canvas
+        self.inkColor = inkColor
+        applyActiveTool()
+        DispatchQueue.main.async { canvas.becomeFirstResponder() }
+    }
+
+    func updateInkColor(_ color: UIColor, canvas: PKCanvasView) {
+        self.canvas = canvas
+        guard !inkColor.isEqual(color) else { return }
+        inkColor = color
+        if !isErasing { applyActiveTool() }
+    }
+
+    func toggleEraser() {
+        isErasing.toggle()
+        applyActiveTool()
+    }
+
+    func setInk() {
+        isErasing = false
+        applyActiveTool()
+    }
+
+    private var inkTool: PKInkingTool {
+        PKInkingTool(.pen, color: inkColor, width: diaryInkWidth)
+    }
+
+    private func applyActiveTool() {
+        guard let canvas else { return }
+        canvas.tool = isErasing ? PKEraserTool(.vector) : inkTool
+    }
 
     /// Local ritual: a lone, oversized question mark summons the guide without
     /// asking the oracle. The check is deliberately forgiving; a false positive
@@ -102,8 +144,12 @@ struct InkCanvasView: UIViewRepresentable {
         canvas.isOpaque = false
         canvas.isScrollEnabled = false               // a fixed page, not a scroll view
         canvas.drawingPolicy = .anyInput             // Pencil, finger, or trackpad
-        canvas.tool = PKInkingTool(.pen, color: inkColor, width: 6)
+        controller.attach(to: canvas, inkColor: inkColor)
         canvas.delegate = context.coordinator
+
+        let pencilInteraction = UIPencilInteraction()
+        pencilInteraction.delegate = context.coordinator
+        canvas.addInteraction(pencilInteraction)
 
         let pageTap = UITapGestureRecognizer(
             target: context.coordinator,
@@ -137,26 +183,35 @@ struct InkCanvasView: UIViewRepresentable {
     }
 
     func updateUIView(_ canvas: PKCanvasView, context: Context) {
-        canvas.tool = PKInkingTool(.pen, color: inkColor, width: 6)
+        controller.updateInkColor(inkColor, canvas: canvas)
         controller.canvas = canvas
     }
 
     func makeCoordinator() -> Coordinator {
-        Coordinator(onChange: onChange, onPageTap: onPageTap, onGuideTap: onGuideTap, onSleepGesture: onSleepGesture)
+        Coordinator(
+            controller: controller,
+            onChange: onChange,
+            onPageTap: onPageTap,
+            onGuideTap: onGuideTap,
+            onSleepGesture: onSleepGesture
+        )
     }
 
-    final class Coordinator: NSObject, PKCanvasViewDelegate, UIGestureRecognizerDelegate {
+    final class Coordinator: NSObject, PKCanvasViewDelegate, UIGestureRecognizerDelegate, UIPencilInteractionDelegate {
+        let controller: CanvasController
         let onChange: () -> Void
         let onPageTap: () -> Void
         let onGuideTap: () -> Void
         let onSleepGesture: () -> Void
 
         init(
+            controller: CanvasController,
             onChange: @escaping () -> Void,
             onPageTap: @escaping () -> Void,
             onGuideTap: @escaping () -> Void,
             onSleepGesture: @escaping () -> Void
         ) {
+            self.controller = controller
             self.onChange = onChange
             self.onPageTap = onPageTap
             self.onGuideTap = onGuideTap
@@ -178,6 +233,10 @@ struct InkCanvasView: UIViewRepresentable {
         @objc func handleSleepPress(_ recognizer: UILongPressGestureRecognizer) {
             guard recognizer.state == .began else { return }
             onSleepGesture()
+        }
+
+        func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
+            controller.toggleEraser()
         }
 
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {

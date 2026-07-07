@@ -28,8 +28,9 @@ enum Theme {
     static let hands: [(label: String, fontName: String)] = [
         ("Dancing Script", "DancingScript-Regular"),
         ("Snell Roundhand", "SnellRoundhand-Bold"),
+        ("Savoye",          "SavoyeLetPlain"),
         ("Zapfino",         "Zapfino"),
-        ("Noteworthy",      "Noteworthy-Bold"),
+        ("Bradley Hand",    "BradleyHandITCTTBold"),
     ]
 
     static func fontName(for hand: String) -> String {
@@ -37,9 +38,20 @@ enum Theme {
     }
 
     /// The cursive font the diary replies in, sized for the current device.
-    static func replyFont(for hand: String) -> Font {
+    static func replySize(for hand: String) -> CGFloat {
         let scriptScale: CGFloat = hand == "Dancing Script" ? 1.14 : 1.0
-        return .custom(fontName(for: hand), size: (isPad ? 40 : 28) * scriptScale)
+        return (isPad ? 40 : 28) * scriptScale
+    }
+
+    static func replyFont(for hand: String) -> Font {
+        .custom(fontName(for: hand), size: replySize(for: hand))
+    }
+
+    /// The same reply face as a `UIFont` — needed to trace glyph outlines with
+    /// Core Text so the diary's hand is drawn stroke by stroke.
+    static func replyUIFont(for hand: String) -> UIFont {
+        let size = replySize(for: hand)
+        return UIFont(name: fontName(for: hand), size: size) ?? .systemFont(ofSize: size)
     }
 
     /// The display face for the title / marks (also Dancing Script).

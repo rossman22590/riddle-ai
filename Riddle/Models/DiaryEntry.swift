@@ -5,6 +5,7 @@ import Foundation
 struct DiaryEntry: Identifiable, Codable, Hashable {
     var id: UUID = UUID()
     var date: Date = Date()
+    var writer: String?
     var reply: String
     var ink: Data?
 }

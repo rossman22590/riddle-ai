@@ -15,6 +15,8 @@ struct OpenRouterOracle {
     func respond(
         imagePNG: Data,
         history: [DiaryTurn] = [],
+        memoryProfile: String? = nil,
+        preservedMemory: String? = nil,
         allowSketch: Bool = false,
         webQuery: String? = nil,
         onDelta: @escaping (String) -> Void
@@ -29,11 +31,39 @@ struct OpenRouterOracle {
             ],
             ["type": "image_url", "image_url": ["url": dataURI]],
         ]
+        // The first pass carries no saved memory — the live conversation is all
+        // Tom sees until he chooses to reach into older pages via [[RECALL]].
+        let firstPass = webQuery == nil && (preservedMemory?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
         let system = diarySystemPrompt
             + (webQuery == nil ? webEscalationDirective : webSearchDirective)
+            + (firstPass ? memoryRecallDirective : "")
+            + memoryDistillDirective
             + (allowSketch ? sketchDirective : "")
             + readingDirective
         var messages: [[String: Any]] = [["role": "system", "content": system]]
+
+        // The writer's soul travels with every turn — small enough to cost little,
+        // rich enough that the diary always knows them (no second round-trip).
+        if let memoryProfile = memoryProfile?.trimmingCharacters(in: .whitespacesAndNewlines), !memoryProfile.isEmpty {
+            messages.append([
+                "role": "system",
+                "content": """
+                What you have come to know of this writer, kept in these pages across every opening — their soul. Speak as one who truly knows them: weave it in naturally, and notice patterns — a word they keep circling, a thing they avoid, a fear they will not name. Never recite this back as a list.
+
+                \(memoryProfile)
+                """
+            ])
+        }
+        if let preservedMemory = preservedMemory?.trimmingCharacters(in: .whitespacesAndNewlines), !preservedMemory.isEmpty {
+            messages.append([
+                "role": "system",
+                "content": """
+                These are preserved pages from earlier openings of this diary, most recent first. Treat them as things the page remembers after being closed. If the writer asks what you remember, answer from these details. Reuse names, phrases, secrets, and emotional callbacks when it feels natural. Some older pages preserve only your answering ink; do not invent missing writer words. Never mention files, storage, JSON, history, sessions, or app closing.
+
+                \(preservedMemory)
+                """
+            ])
+        }
         if !history.isEmpty {
             messages.append([
                 "role": "system",
@@ -116,15 +146,31 @@ struct OpenRouterOracle {
         ]
     ]
 
-    /// Conjures an ink illustration of `subject` using the image model, and
-    /// returns the raw PNG data. The prompt forces monochrome pen-and-ink.
+    /// Conjures a fresh ink illustration of `subject`. The prompt forces
+    /// monochrome pen-and-ink on white.
     func draw(subject: String, model imageModel: String) async throws -> Data {
+        try await requestImage(model: imageModel, content: [["type": "text", "text": inkStylePrompt(for: subject)]])
+    }
+
+    /// Refines the writer's *own* drawing: the committed page is sent back to
+    /// the image model with an ink instruction (image-to-image), so the diary
+    /// perfects what they drew — still borderless ink on white.
+    func redraw(instruction: String, source: Data, model imageModel: String) async throws -> Data {
+        let dataURI = "data:image/png;base64,\(source.base64EncodedString())"
+        return try await requestImage(model: imageModel, content: [
+            ["type": "text", "text": inkEditPrompt(for: instruction)],
+            ["type": "image_url", "image_url": ["url": dataURI]],
+        ])
+    }
+
+    /// Shared image-generation call for `draw` / `redraw`.
+    private func requestImage(model imageModel: String, content: [[String: Any]]) async throws -> Data {
         guard !apiKey.isEmpty else { throw OracleError.missingKey }
 
         let payload: [String: Any] = [
             "model": imageModel,
             "modalities": ["image", "text"],
-            "messages": [["role": "user", "content": inkStylePrompt(for: subject)]],
+            "messages": [["role": "user", "content": content]],
         ]
 
         var request = URLRequest(url: Self.endpoint)
@@ -156,8 +202,8 @@ struct OpenRouterOracle {
         if let images = message["images"] as? [[String: Any]] {
             uri = (images.first?["image_url"] as? [String: Any])?["url"] as? String
         }
-        if uri == nil, let content = message["content"] as? [[String: Any]] {
-            for part in content {
+        if uri == nil, let contentParts = message["content"] as? [[String: Any]] {
+            for part in contentParts {
                 if let imageURL = part["image_url"] as? [String: Any], let url = imageURL["url"] as? String {
                     uri = url
                     break

@@ -1,131 +1,173 @@
 import SwiftUI
 import Combine
+import CoreText
 
-/// A `TextRenderer` that reveals glyphs one at a time, fading each in with a
-/// small upward drift, and trails a soft glowing "nib" at the writing frontier —
-/// so the diary's reply looks penned in real time.
-struct HandwritingRenderer: TextRenderer, Animatable {
-    /// Number of glyphs revealed so far (fractional for a smooth frontier).
-    var revealed: Double
-    var nibColor: Color
-    var showNib: Bool
+/// The diary's hand, laid out as real glyph outlines (via Core Text) so the
+/// reply can be *drawn* — each letter's contour traced by a moving nib — rather
+/// than faded in. Computed once per reply, then animated cheaply.
+struct InkLayout {
+    var paths: [Path]      // per-glyph outlines, already in canvas (y-down) space
+    var frames: [CGRect]   // per-glyph bounds (for spacing / fallback)
+    var size: CGSize
+    var glyphCount: Int { paths.count }
+}
 
-    var animatableData: Double {
-        get { revealed }
-        set { revealed = newValue }
-    }
+func makeInkLayout(text: String, font: UIFont, maxWidth: CGFloat) -> InkLayout {
+    let trimmed = text
+    guard !trimmed.isEmpty else { return InkLayout(paths: [], frames: [], size: .zero) }
 
-    func draw(layout: Text.Layout, in context: inout GraphicsContext) {
-        var index = 0
-        var frontier: CGRect?
+    let para = NSMutableParagraphStyle()
+    para.alignment = .center
+    para.lineSpacing = font.pointSize * 0.30
 
-        for line in layout {
-            for run in line {
-                for glyph in run {
-                    // How recently this glyph was reached by the nib. <=0 means
-                    // it hasn't been written yet; small positive = just inked.
-                    let recency = revealed - Double(index)
-                    if recency <= 0 { index += 1; continue }
+    let attributed = NSAttributedString(string: trimmed, attributes: [.font: font, .paragraphStyle: para])
+    let framesetter = CTFramesetterCreateWithAttributedString(attributed)
 
-                    // The stroke flows in as the nib passes over it.
-                    let fade = min(1, max(0, recency))
-                    let opacity = fade * fade * (3 - 2 * fade)
-                    var copy = context
-                    copy.opacity = opacity
-                    copy.translateBy(x: 0, y: (1 - opacity) * 3)
-                    copy.draw(glyph)
+    var fitRange = CFRange()
+    let suggested = CTFramesetterSuggestFrameSizeWithConstraints(
+        framesetter,
+        CFRange(location: 0, length: 0),
+        nil,
+        CGSize(width: maxWidth, height: .greatestFiniteMagnitude),
+        &fitRange
+    )
+    let size = CGSize(width: ceil(suggested.width) + 6,
+                      height: ceil(suggested.height) + font.pointSize * 0.5)
 
-                    // Fresh ink stays wet — a soft dark bloom — then dries over
-                    // the next couple of letters. This reads as inking, not fading.
-                    if recency < 2 {
-                        let wetness = (1 - recency / 2) * 0.6
-                        var sheen = context
-                        sheen.opacity = wetness * opacity
-                        sheen.addFilter(.blur(radius: 1.2 + (1 - min(1, recency)) * 1.6))
-                        sheen.translateBy(x: 0, y: (1 - opacity) * 3)
-                        sheen.draw(glyph)
-                        if recency < 1 { frontier = glyph.typographicBounds.rect }
-                    }
+    let framePath = CGPath(rect: CGRect(origin: .zero, size: size), transform: nil)
+    let frame = CTFramesetterCreateFrame(framesetter, CFRange(location: 0, length: 0), framePath, nil)
+    let lines = (CTFrameGetLines(frame) as? [CTLine]) ?? []
+    var origins = [CGPoint](repeating: .zero, count: lines.count)
+    CTFrameGetLineOrigins(frame, CFRange(location: 0, length: 0), &origins)
 
-                    index += 1
+    let ctFont = CTFontCreateWithName(font.fontName as CFString, font.pointSize, nil)
+    // Core Text is y-up; flip into the SwiftUI canvas (y-down) space.
+    let flip = CGAffineTransform(a: 1, b: 0, c: 0, d: -1, tx: 0, ty: size.height)
+
+    var paths: [Path] = []
+    var frames: [CGRect] = []
+
+    for (lineIndex, line) in lines.enumerated() {
+        let lineOrigin = lineIndex < origins.count ? origins[lineIndex] : .zero
+        let runs = (CTLineGetGlyphRuns(line) as? [CTRun]) ?? []
+        for run in runs {
+            let count = CTRunGetGlyphCount(run)
+            if count == 0 { continue }
+            var glyphs = [CGGlyph](repeating: 0, count: count)
+            var positions = [CGPoint](repeating: .zero, count: count)
+            CTRunGetGlyphs(run, CFRange(location: 0, length: count), &glyphs)
+            CTRunGetPositions(run, CFRange(location: 0, length: count), &positions)
+
+            for glyphIndex in 0..<count {
+                let gx = lineOrigin.x + positions[glyphIndex].x
+                let gy = lineOrigin.y + positions[glyphIndex].y
+                var transform = CGAffineTransform(translationX: gx, y: gy).concatenating(flip)
+
+                if let glyphPath = CTFontCreatePathForGlyph(ctFont, glyphs[glyphIndex], nil),
+                   let moved = glyphPath.copy(using: &transform) {
+                    let path = Path(moved)
+                    paths.append(path)
+                    frames.append(path.boundingRect)
+                } else {
+                    // Spaces have no outline; keep the slot so pacing stays even.
+                    paths.append(Path())
+                    frames.append(CGRect(x: gx, y: size.height - gy - 2, width: 4, height: 4))
                 }
             }
         }
-
-        // The pen nib: a soft glow trailing the writing frontier.
-        if showNib, let rect = frontier {
-            let point = CGPoint(x: rect.maxX, y: rect.midY)
-            context.drawLayer { layer in
-                layer.addFilter(.blur(radius: 5))
-                layer.fill(
-                    Path(ellipseIn: CGRect(x: point.x - 5, y: point.y - 5, width: 10, height: 10)),
-                    with: .color(nibColor.opacity(0.5))
-                )
-            }
-            context.drawLayer { layer in
-                layer.addFilter(.blur(radius: 1.5))
-                layer.fill(
-                    Path(ellipseIn: CGRect(x: point.x - 2, y: point.y - 2, width: 4, height: 4)),
-                    with: .color(nibColor)
-                )
-            }
-        }
     }
+
+    return InkLayout(paths: paths, frames: frames, size: size)
 }
 
-/// Static text drawn with the handwriting renderer at a given reveal amount.
-struct HandwritingText: View {
-    let text: String
-    var revealed: Double
-    var font: Font
-    var color: Color
-    var showNib: Bool
-
-    var body: some View {
-        Text(text)
-            .font(font)
-            .foregroundStyle(color)
-            .multilineTextAlignment(.center)
-            .lineSpacing(Theme.isPad ? 16 : 10)
-            .textRenderer(HandwritingRenderer(revealed: revealed, nibColor: Theme.accent, showNib: showNib))
-    }
-}
-
-/// Drives the reveal forward at a steady cadence, independent of how fast the
-/// network delivers text. Calls `onComplete` once, when the stream has finished
-/// *and* the reveal has caught up.
+/// Draws the reply one letter at a time: the body inks in behind a nib that
+/// traces each glyph's outline, so it reads as a hand writing in real ink.
 struct RevealingHandwriting: View {
     let text: String
     var streamFinished: Bool
-    var font: Font
+    var uiFont: UIFont
     var color: Color
     var onComplete: () -> Void
 
     @State private var revealed: Double = 0
     @State private var completed = false
+    @State private var layout = InkLayout(paths: [], frames: [], size: .zero)
 
-    private let glyphsPerSecond: Double = 13.5
+    private let glyphsPerSecond: Double = 16
     private let tick = Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()
 
+    private var maxWidth: CGFloat {
+        min(Theme.isPad ? 660 : 340, UIScreen.main.bounds.width - 72)
+    }
+
     var body: some View {
-        HandwritingText(
-            text: text,
-            revealed: revealed,
-            font: font,
-            color: color,
-            showNib: revealed < Double(text.count)
-        )
-        .onReceive(tick) { _ in
-            let target = Double(text.count)
-            if revealed < target {
-                // A hand's rhythm — the nib speeds and eases as it writes.
-                let rhythm = 0.68 + 0.6 * (0.5 + 0.5 * sin(revealed * 1.25))
-                revealed = min(target, revealed + (glyphsPerSecond * rhythm) / 60.0)
+        Canvas { context, size in
+            draw(into: &context, size: size)
+        }
+        .frame(width: max(1, layout.size.width), height: max(1, layout.size.height))
+        .onAppear(perform: rebuild)
+        .onChange(of: text) { rebuild() }
+        .onReceive(tick) { _ in advance() }
+    }
+
+    private func rebuild() {
+        layout = makeInkLayout(text: text, font: uiFont, maxWidth: maxWidth)
+        revealed = 0
+        completed = false
+    }
+
+    private func advance() {
+        let target = Double(layout.glyphCount)
+        if revealed < target {
+            let rhythm = 0.72 + 0.5 * (0.5 + 0.5 * sin(revealed * 1.2))   // a hand's cadence
+            revealed = min(target, revealed + (glyphsPerSecond * rhythm) / 60.0)
+        }
+        if !completed, streamFinished, target > 0, revealed >= target {
+            completed = true
+            onComplete()
+        }
+    }
+
+    private func draw(into context: inout GraphicsContext, size: CGSize) {
+        let ink = GraphicsContext.Shading.color(color)
+        let lineWidth = max(1.1, uiFont.pointSize * 0.026)
+        var nib: CGPoint?
+
+        for (index, path) in layout.paths.enumerated() {
+            if path.isEmpty { continue }
+            let recency = revealed - Double(index)
+            if recency <= 0 { continue }
+
+            if recency >= 1 {
+                context.fill(path, with: ink)          // written and dry
+            } else {
+                let frac = recency
+                // The body inks in behind the moving nib…
+                context.fill(path, with: .color(color.opacity(frac * frac)))
+                // …while the nib traces the letter's outline in real time.
+                let traced = path.trimmedPath(from: 0, to: frac)
+                context.stroke(
+                    traced,
+                    with: ink,
+                    style: StrokeStyle(lineWidth: lineWidth, lineCap: .round, lineJoin: .round)
+                )
+                nib = traced.currentPoint ?? nib
             }
-            if !completed, streamFinished, target > 0, revealed >= target {
-                completed = true
-                onComplete()
+        }
+
+        // The nib itself: a soft wet glow riding the exact point being inked.
+        if let nib {
+            context.drawLayer { layer in
+                layer.addFilter(.blur(radius: 4))
+                layer.fill(
+                    Path(ellipseIn: CGRect(x: nib.x - 4, y: nib.y - 4, width: 8, height: 8)),
+                    with: .color(Theme.accent.opacity(0.5))
+                )
             }
+            context.fill(
+                Path(ellipseIn: CGRect(x: nib.x - 1.6, y: nib.y - 1.6, width: 3.2, height: 3.2)),
+                with: .color(Theme.accent)
+            )
         }
     }
 }

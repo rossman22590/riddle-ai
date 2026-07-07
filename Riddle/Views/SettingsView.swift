@@ -1,5 +1,6 @@
 import SwiftUI
 
+/// The inner cover of the diary — settings, styled as a page rather than a Form.
 struct SettingsView: View {
     @EnvironmentObject private var settings: AppSettings
     @Environment(\.dismiss) private var dismiss
@@ -8,134 +9,131 @@ struct SettingsView: View {
     @State private var testing = false
     @State private var testResult: String?
 
-    // Must be vision-capable — the diary reads your handwriting from the page.
-    private let modelPresets = [
-        "anthropic/claude-haiku-4.5",
-        "anthropic/claude-3.7-sonnet",
-        "openai/gpt-4o-mini",
-        "openai/gpt-4o",
-        "google/gemini-2.0-flash-001",
-        "google/gemini-2.5-flash",
-    ]
-
     var body: some View {
-        NavigationStack {
-            Form {
-                Section {
-                    SecureField("sk-or-…", text: $keyDraft)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                    HStack {
-                        Button("Bind key") { settings.setAPIKey(keyDraft); testResult = nil }
-                            .disabled(keyDraft.trimmingCharacters(in: .whitespaces).isEmpty)
-                        if settings.apiKeyIsSet {
-                            Spacer()
-                            Button("Unbind", role: .destructive) {
-                                settings.setAPIKey("")
-                                keyDraft = ""
-                                testResult = nil
-                            }
-                        }
+        DiarySheet(title: "The Inner Cover") {
+            VStack(alignment: .leading, spacing: 34) {
+                voiceSection
+                conjuringSection
+                handSection
+                pageSection
+
+                InkTextButton("Open the first page again") {
+                    settings.hasOnboarded = false
+                    dismiss()
+                }
+                .padding(.top, 4)
+                DiaryText("Riddle · write with an Apple Pencil or a fingertip; pause, and the page drinks the ink.",
+                          size: 13, opacity: 0.45)
+            }
+        }
+        .onAppear { keyDraft = settings.apiKey }
+    }
+
+    // MARK: - Sections
+
+    private var voiceSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            DiaryHeading("The voice")
+            InkField(placeholder: "sk-or-…", text: $keyDraft, secure: true)
+
+            HStack(spacing: 20) {
+                InkTextButton("Bind key") {
+                    settings.setAPIKey(keyDraft)
+                    testResult = nil
+                }
+                .disabled(keyDraft.trimmingCharacters(in: .whitespaces).isEmpty)
+                .opacity(keyDraft.trimmingCharacters(in: .whitespaces).isEmpty ? 0.4 : 1)
+
+                if settings.apiKeyIsSet {
+                    InkTextButton("Unbind", color: Theme.accent) {
+                        settings.setAPIKey("")
+                        keyDraft = ""
+                        testResult = nil
                     }
-                    if settings.apiKeyIsSet {
-                        Label("Key saved.", systemImage: "checkmark.seal.fill")
-                            .foregroundStyle(.green)
-                            .font(.footnote)
-                        Button {
-                            runTest()
-                        } label: {
-                            HStack {
-                                if testing { ProgressView().controlSize(.small) }
-                                Text(testing ? "Listening…" : "Wake the voice")
-                            }
-                        }
+                    InkTextButton(testing ? "Listening…" : "Wake the voice") { runTest() }
                         .disabled(testing)
-                        if let testResult {
-                            Text(testResult)
-                                .font(.footnote)
-                                .foregroundStyle(testResult.hasPrefix("✓") ? .green : .red)
-                        }
-                    } else {
-                        Label("No key yet — the diary sleeps until you give it a voice.", systemImage: "moon.zzz")
-                            .foregroundStyle(.secondary)
-                            .font(.footnote)
-                    }
-                    Link("Fetch an OpenRouter key ↗", destination: URL(string: "https://openrouter.ai/keys")!)
-                        .font(.footnote)
-                } header: {
-                    Text("The voice")
-                } footer: {
-                    Text("The bound key stays in the device Keychain. It is used only when the diary reads the page.")
                 }
-
-                Section {
-                    TextField("voice inscription", text: $settings.model)
-                        .textInputAutocapitalization(.never)
-                        .autocorrectionDisabled()
-                    Menu("Choose a voice") {
-                        ForEach(modelPresets, id: \.self) { preset in
-                            Button(preset) { settings.model = preset }
-                        }
-                    }
-                } header: {
-                    Text("The spirit")
-                } footer: {
-                    Text("The spirit must be able to see ink on the page.")
-                }
-
-                Section {
-                    Toggle("Let the diary draw", isOn: $settings.drawingEnabled)
-                    if settings.drawingEnabled {
-                        TextField("ink conjuring inscription", text: $settings.imageModel)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-                    }
-                } header: {
-                    Text("Ink conjuring")
-                } footer: {
-                    Text("When you ask it to show something, the diary sketches in black ink on cream paper.")
-                }
-
-                Section("The hand") {
-                    Picker("Script", selection: $settings.replyHand) {
-                        ForEach(Theme.hands, id: \.label) { hand in
-                            Text(hand.label).tag(hand.label)
-                        }
-                    }
-                    Text("The quick brown fox")
-                        .font(Theme.replyFont(for: settings.replyHand))
-                        .foregroundStyle(Theme.replyInk)
-                        .frame(maxWidth: .infinity, alignment: .center)
-                        .padding(.vertical, 6)
-                }
-
-                Section("The page") {
-                    VStack(alignment: .leading) {
-                        Text("The page drinks after: \(settings.pauseDelay, specifier: "%.1f")s")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
-                        Slider(value: $settings.pauseDelay, in: 1.0...4.0, step: 0.1)
-                        Text("This controls only when your writing sinks into the page.")
-                            .font(.caption2)
-                            .foregroundStyle(.secondary)
-                    }
-                    Toggle("Let the page answer with touch", isOn: $settings.hapticsEnabled)
-                }
-
-                Section {
-                    Button("Open the first page again") { settings.hasOnboarded = false; dismiss() }
-                } footer: {
-                    Text("Riddle · write with Apple Pencil or a fingertip; pause, and the page drinks the ink.")
-                }
+                Spacer(minLength: 0)
             }
-            .navigationTitle("The Inner Cover")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .confirmationAction) {
-                    Button("Done") { dismiss() }
+
+            if settings.apiKeyIsSet {
+                DiaryText("A key is bound. It rests in the Keychain, used only to read the page.",
+                          size: 13, opacity: 0.5)
+                if let testResult {
+                    Text(testResult)
+                        .font(.system(size: 13, weight: .regular, design: .serif))
+                        .foregroundStyle(testResult.hasPrefix("✓") ? .green : Theme.accent)
                 }
+            } else {
+                DiaryText("No voice yet — the diary sleeps until you bind a key.", size: 13, opacity: 0.5)
             }
-            .onAppear { keyDraft = settings.apiKey }
+
+            Link(destination: URL(string: "https://openrouter.ai/keys")!) {
+                Text("Fetch an OpenRouter key ↗")
+                    .font(.system(size: 13, weight: .regular, design: .serif))
+                    .foregroundStyle(Theme.accent)
+            }
+        }
+    }
+
+    private var conjuringSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            DiaryHeading("Ink conjuring")
+            Toggle(isOn: $settings.drawingEnabled) {
+                Text("Let the diary draw")
+                    .font(.system(size: 16, weight: .regular, design: .serif))
+                    .foregroundStyle(Theme.ink)
+            }
+            DiaryText("When you ask it to show something — or simply draw — the diary works in black ink on the page.",
+                      size: 13, opacity: 0.5)
+        }
+    }
+
+    private var handSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            DiaryHeading("The hand")
+            inkMenu(current: settings.replyHand, choices: Theme.hands.map { $0.label }) { settings.replyHand = $0 }
+            Text("Whatever you confide, I keep")
+                .font(Theme.replyFont(for: settings.replyHand))
+                .foregroundStyle(Theme.replyInk)
+                .frame(maxWidth: .infinity, alignment: .center)
+                .padding(.top, 6)
+        }
+    }
+
+    private var pageSection: some View {
+        VStack(alignment: .leading, spacing: 12) {
+            DiaryHeading("The page")
+            DiaryText("The page drinks your ink after \(String(format: "%.1f", settings.pauseDelay)) seconds of rest.",
+                      size: 14, opacity: 0.7)
+            Slider(value: $settings.pauseDelay, in: 1.0...4.0, step: 0.1)
+            Toggle(isOn: $settings.hapticsEnabled) {
+                Text("Let the page answer with touch")
+                    .font(.system(size: 16, weight: .regular, design: .serif))
+                    .foregroundStyle(Theme.ink)
+            }
+        }
+    }
+
+    // MARK: - Bits
+
+    private func inkMenu(current: String, choices: [String], onPick: @escaping (String) -> Void) -> some View {
+        Menu {
+            ForEach(choices, id: \.self) { choice in
+                Button(choice) { onPick(choice) }
+            }
+        } label: {
+            HStack {
+                Text(current)
+                    .font(.system(size: 16, weight: .regular, design: .serif))
+                    .foregroundStyle(Theme.ink)
+                Spacer()
+                Image(systemName: "chevron.up.chevron.down")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(Theme.ink.opacity(0.4))
+            }
+            .padding(.vertical, 8)
+            .overlay(Rectangle().fill(Theme.ink.opacity(0.14)).frame(height: 1), alignment: .bottom)
         }
     }
 
