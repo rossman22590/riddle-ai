@@ -153,7 +153,7 @@ struct DiaryView: View {
         let charsPerLine = max(12, Int(width / averageGlyphWidth))
         let lineCount = max(1, Int(ceil(Double(max(text.count, 1)) / Double(charsPerLine))))
         let textHeight = CGFloat(lineCount) * (Theme.isPad ? 66 : 48)
-        let imageHeight: CGFloat = drawnImage == nil ? 0 : (displayReply.isEmpty ? (Theme.isPad ? 440 : 290) : (Theme.isPad ? 300 : 180))
+        let imageHeight: CGFloat = drawnImage == nil ? 0 : (displayReply.isEmpty ? (Theme.isPad ? 560 : 340) : (Theme.isPad ? 430 : 250))
         let spacing: CGFloat = drawnImage == nil || displayReply.isEmpty ? 0 : 18
         return textHeight + imageHeight + spacing
     }
@@ -183,8 +183,8 @@ struct DiaryView: View {
                         Image(uiImage: image)
                             .resizable()
                             .scaledToFit()
-                            .frame(maxWidth: Theme.isPad ? 500 : 300,
-                                   maxHeight: hasReply ? (Theme.isPad ? 300 : 180) : (Theme.isPad ? 440 : 290))
+                            .frame(maxWidth: Theme.isPad ? 620 : 340,
+                                   maxHeight: hasReply ? (Theme.isPad ? 430 : 250) : (Theme.isPad ? 560 : 340))
                             .opacity(drawProgress)
                             .blur(radius: (1 - drawProgress) * 7)
                             .scaleEffect(0.98 + drawProgress * 0.02)
