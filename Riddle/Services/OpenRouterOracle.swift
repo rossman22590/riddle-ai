@@ -2,7 +2,8 @@ import Foundation
 
 /// The diary's spirit. Exactly like the original: the committed page is sent as
 /// an inline PNG to a vision model over an OpenAI-compatible `/chat/completions`
-/// endpoint (OpenRouter), and the reply is streamed back sentence by sentence.
+/// endpoint (OpenRouter). Prior live turns are sent back with each page so the
+/// open diary keeps continuity until the app is truly closed.
 struct OpenRouterOracle {
     let apiKey: String
     let model: String
@@ -11,25 +12,55 @@ struct OpenRouterOracle {
 
     /// Reads the writer's ink (a PNG of the committed page) and streams the
     /// diary's reply. `onDelta` is delivered on the main actor as text arrives.
-    func respond(imagePNG: Data, allowSketch: Bool = false, onDelta: @escaping (String) -> Void) async throws -> String {
+    func respond(
+        imagePNG: Data,
+        history: [DiaryTurn] = [],
+        allowSketch: Bool = false,
+        webQuery: String? = nil,
+        onDelta: @escaping (String) -> Void
+    ) async throws -> String {
         guard !apiKey.isEmpty else { throw OracleError.missingKey }
 
         let dataURI = "data:image/png;base64,\(imagePNG.base64EncodedString())"
         let userContent: [[String: Any]] = [
-            ["type": "text", "text": "Read what is written to you on the page, and reply."],
+            [
+                "type": "text",
+                "text": "Read this handwritten page with maximum care. Infer the writer's intended words as best you can, using spelling, shape, and the prior conversation. Continue the same conversation and reply."
+            ],
             ["type": "image_url", "image_url": ["url": dataURI]],
         ]
-        let system = allowSketch ? diarySystemPrompt + sketchDirective : diarySystemPrompt
-        let messages: [[String: Any]] = [
-            ["role": "system", "content": system],
-            ["role": "user", "content": userContent],
-        ]
-        let payload: [String: Any] = [
+        let system = diarySystemPrompt
+            + (webQuery == nil ? webEscalationDirective : webSearchDirective)
+            + (allowSketch ? sketchDirective : "")
+            + readingDirective
+        var messages: [[String: Any]] = [["role": "system", "content": system]]
+        if !history.isEmpty {
+            messages.append([
+                "role": "system",
+                "content": "These are the earlier living exchanges on these pages. Keep continuity with them. Reuse names, private phrases, secrets, and emotional details when it feels alive, but never summarize them mechanically."
+            ])
+            for turn in history {
+                messages.append(["role": "user", "content": "Earlier, the writer wrote: \(turn.writer)"])
+                messages.append(["role": "assistant", "content": turn.reply])
+            }
+        }
+        if let webQuery {
+            messages.append([
+                "role": "system",
+                "content": "The writer's current question requires fresh traces for: \(webQuery). Consult them silently, then answer naturally in the diary's voice. Do not cite, link, or mention sources."
+            ])
+        }
+        messages.append(["role": "user", "content": userContent])
+
+        var payload: [String: Any] = [
             "model": model,
             "messages": messages,
             "stream": true,
-            "max_tokens": 2000,
+            "max_tokens": 500,
         ]
+        if webQuery != nil {
+            payload["tools"] = Self.webSearchTools
+        }
 
         var request = URLRequest(url: Self.endpoint)
         request.httpMethod = "POST"
@@ -72,6 +103,18 @@ struct OpenRouterOracle {
 
         return full.trimmingCharacters(in: .whitespacesAndNewlines)
     }
+
+    private static let webSearchTools: [[String: Any]] = [
+        [
+            "type": "openrouter:web_search",
+            "parameters": [
+                "engine": "auto",
+                "max_results": 3,
+                "max_total_results": 6,
+                "search_context_size": "low",
+            ] as [String: Any],
+        ]
+    ]
 
     /// Conjures an ink illustration of `subject` using the image model, and
     /// returns the raw PNG data. The prompt forces monochrome pen-and-ink.

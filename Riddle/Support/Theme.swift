@@ -15,6 +15,11 @@ enum Theme {
     static let faint       = Color(red: 0.102, green: 0.098, blue: 0.106).opacity(0.34)
 
     static var uiInk: UIColor { UIColor(red: 0.102, green: 0.098, blue: 0.106, alpha: 1) }
+    static var uiPaper: UIColor { UIColor(red: 0.957, green: 0.949, blue: 0.929, alpha: 1) }
+    static let paperHex = "#F4F2ED"
+    static let paperRGB = "RGB(244, 242, 237)"
+    static let inkHex = "#1A191B"
+    static let inkRGB = "RGB(26, 25, 27)"
 
     static var isPad: Bool { UIDevice.current.userInterfaceIdiom == .pad }
 

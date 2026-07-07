@@ -28,7 +28,8 @@ struct HandwritingRenderer: TextRenderer, Animatable {
                     if recency <= 0 { index += 1; continue }
 
                     // The stroke flows in as the nib passes over it.
-                    let opacity = min(1, recency)
+                    let fade = min(1, max(0, recency))
+                    let opacity = fade * fade * (3 - 2 * fade)
                     var copy = context
                     copy.opacity = opacity
                     copy.translateBy(x: 0, y: (1 - opacity) * 3)
@@ -103,7 +104,7 @@ struct RevealingHandwriting: View {
     @State private var revealed: Double = 0
     @State private var completed = false
 
-    private let glyphsPerSecond: Double = 19
+    private let glyphsPerSecond: Double = 13.5
     private let tick = Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()
 
     var body: some View {
@@ -125,43 +126,6 @@ struct RevealingHandwriting: View {
                 completed = true
                 onComplete()
             }
-        }
-    }
-}
-
-/// Renders faint cursive letters whose opacity travels in a slow wave, so the
-/// letters fade in and out like ink stirring on the page.
-struct ShimmerRenderer: TextRenderer {
-    var phase: Double
-
-    func draw(layout: Text.Layout, in context: inout GraphicsContext) {
-        var index = 0
-        for line in layout {
-            for run in line {
-                for glyph in run {
-                    let wave = 0.5 + 0.5 * sin(phase * 1.7 - Double(index) * 0.55)
-                    var copy = context
-                    copy.opacity = 0.06 + 0.42 * wave
-                    copy.draw(glyph)
-                    index += 1
-                }
-            }
-        }
-    }
-}
-
-/// While the diary reads the page: faint letters in its own hand, fading in and
-/// out like ink stirring — no indicator, just fades.
-struct ThinkingIndicator: View {
-    private let murmur = "the ink stirs"
-
-    var body: some View {
-        TimelineView(.animation) { timeline in
-            let t = timeline.date.timeIntervalSinceReferenceDate
-            Text(murmur)
-                .font(Theme.display(Theme.isPad ? 40 : 30))
-                .foregroundStyle(Theme.replyInk)
-                .textRenderer(ShimmerRenderer(phase: t))
         }
     }
 }

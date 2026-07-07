@@ -26,11 +26,11 @@ struct SettingsView: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
                     HStack {
-                        Button("Save key") { settings.setAPIKey(keyDraft); testResult = nil }
+                        Button("Bind key") { settings.setAPIKey(keyDraft); testResult = nil }
                             .disabled(keyDraft.trimmingCharacters(in: .whitespaces).isEmpty)
                         if settings.apiKeyIsSet {
                             Spacer()
-                            Button("Remove", role: .destructive) {
+                            Button("Unbind", role: .destructive) {
                                 settings.setAPIKey("")
                                 keyDraft = ""
                                 testResult = nil
@@ -46,7 +46,7 @@ struct SettingsView: View {
                         } label: {
                             HStack {
                                 if testing { ProgressView().controlSize(.small) }
-                                Text(testing ? "Listening…" : "Test the diary's voice")
+                                Text(testing ? "Listening…" : "Wake the voice")
                             }
                         }
                         .disabled(testing)
@@ -60,43 +60,43 @@ struct SettingsView: View {
                             .foregroundStyle(.secondary)
                             .font(.footnote)
                     }
-                    Link("Get an OpenRouter key ↗", destination: URL(string: "https://openrouter.ai/keys")!)
+                    Link("Fetch an OpenRouter key ↗", destination: URL(string: "https://openrouter.ai/keys")!)
                         .font(.footnote)
                 } header: {
-                    Text("OpenRouter")
+                    Text("The voice")
                 } footer: {
-                    Text("Your key is stored securely in the device Keychain and sent only to openrouter.ai. The diary reads the ink on the page with a vision model — nothing else.")
+                    Text("The bound key stays in the device Keychain. It is used only when the diary reads the page.")
                 }
 
                 Section {
-                    TextField("model slug", text: $settings.model)
+                    TextField("voice inscription", text: $settings.model)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled()
-                    Menu("Choose a model") {
+                    Menu("Choose a voice") {
                         ForEach(modelPresets, id: \.self) { preset in
                             Button(preset) { settings.model = preset }
                         }
                     }
                 } header: {
-                    Text("Model")
+                    Text("The spirit")
                 } footer: {
-                    Text("Must be a vision-capable model — it reads your handwriting from the page.")
+                    Text("The spirit must be able to see ink on the page.")
                 }
 
                 Section {
                     Toggle("Let the diary draw", isOn: $settings.drawingEnabled)
                     if settings.drawingEnabled {
-                        TextField("image model", text: $settings.imageModel)
+                        TextField("ink conjuring inscription", text: $settings.imageModel)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                     }
                 } header: {
-                    Text("Illustrations")
+                    Text("Ink conjuring")
                 } footer: {
-                    Text("When you ask it to draw, the diary sketches — always in black ink, never colour. Uses an image-generation model (default google/gemini-3.1-flash-lite-image).")
+                    Text("When you ask it to show something, the diary sketches in black ink on cream paper.")
                 }
 
-                Section("The diary's hand") {
+                Section("The hand") {
                     Picker("Script", selection: $settings.replyHand) {
                         ForEach(Theme.hands, id: \.label) { hand in
                             Text(hand.label).tag(hand.label)
@@ -109,23 +109,26 @@ struct SettingsView: View {
                         .padding(.vertical, 6)
                 }
 
-                Section("The ink") {
+                Section("The page") {
                     VStack(alignment: .leading) {
-                        Text("Pause before the ink is drunk: \(settings.pauseDelay, specifier: "%.1f")s")
+                        Text("The page drinks after: \(settings.pauseDelay, specifier: "%.1f")s")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                         Slider(value: $settings.pauseDelay, in: 1.0...4.0, step: 0.1)
+                        Text("This controls only when your writing sinks into the page.")
+                            .font(.caption2)
+                            .foregroundStyle(.secondary)
                     }
-                    Toggle("Haptic feedback", isOn: $settings.hapticsEnabled)
+                    Toggle("Let the page answer with touch", isOn: $settings.hapticsEnabled)
                 }
 
                 Section {
-                    Button("Replay the introduction") { settings.hasOnboarded = false; dismiss() }
+                    Button("Open the first page again") { settings.hasOnboarded = false; dismiss() }
                 } footer: {
-                    Text("Riddle · an enchanted diary for iPad. Write with your Apple Pencil or a fingertip; pause, and your words fade as the diary drinks the ink and answers in flowing script.")
+                    Text("Riddle · write with Apple Pencil or a fingertip; pause, and the page drinks the ink.")
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle("The Inner Cover")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {

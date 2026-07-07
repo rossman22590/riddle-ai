@@ -4,6 +4,7 @@ import SwiftUI
 struct RiddleApp: App {
     @StateObject private var settings = AppSettings()
     @StateObject private var store = DiaryStore()
+    @StateObject private var session = DiarySession()
 
     init() {
         FontRegistrar.registerBundledFonts()
@@ -14,6 +15,7 @@ struct RiddleApp: App {
             ContentView()
                 .environmentObject(settings)
                 .environmentObject(store)
+                .environmentObject(session)
                 // The parchment palette is designed to read the same in light or
                 // dark environments, so we pin the scheme for a consistent look.
                 .preferredColorScheme(.light)

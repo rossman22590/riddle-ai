@@ -1,5 +1,25 @@
 import Foundation
 
+/// One live back-and-forth in the open diary. This is intentionally not
+/// persisted: it lasts while the app process is alive, then vanishes when the
+/// diary is truly closed.
+struct DiaryTurn: Hashable {
+    var writer: String
+    var reply: String
+}
+
+@MainActor
+final class DiarySession: ObservableObject {
+    private(set) var turns: [DiaryTurn] = []
+
+    func add(writer: String, reply: String) {
+        let writer = writer.trimmingCharacters(in: .whitespacesAndNewlines)
+        let reply = reply.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !writer.isEmpty || !reply.isEmpty else { return }
+        turns.append(DiaryTurn(writer: writer.isEmpty ? "The writer's ink was difficult to read." : writer, reply: reply))
+    }
+}
+
 /// Persists past exchanges to a JSON file in the app's Documents directory.
 @MainActor
 final class DiaryStore: ObservableObject {

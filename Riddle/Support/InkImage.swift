@@ -1,10 +1,9 @@
 import UIKit
 import CoreImage
 
-/// Forces any generated image into black-ink-on-white: desaturated and
-/// high-contrast, so — combined with a `.multiply` blend onto the page — only
-/// the ink strokes show. Guarantees the "always ink style" rule regardless of
-/// what the model returns.
+/// Forces any generated image into near-black ink on the same cream paper the
+/// app uses. This guarantees no white image canvas even if the model returns
+/// one.
 enum InkImage {
     private static let context = CIContext(options: nil)
 
@@ -19,6 +18,17 @@ enum InkImage {
         ])
 
         guard let cgImage = context.createCGImage(inked, from: inked.extent) else { return nil }
-        return UIImage(cgImage: cgImage)
+
+        let source = UIImage(cgImage: cgImage)
+        let renderer = UIGraphicsImageRenderer(size: source.size)
+        return renderer.image { context in
+            Theme.uiPaper.setFill()
+            context.fill(CGRect(origin: .zero, size: source.size))
+            source.draw(
+                in: CGRect(origin: .zero, size: source.size),
+                blendMode: .multiply,
+                alpha: 1
+            )
+        }
     }
 }
