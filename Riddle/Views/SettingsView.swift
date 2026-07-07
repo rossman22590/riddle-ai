@@ -113,7 +113,7 @@ struct SettingsView: View {
             DiaryHeading("The page")
             DiaryText("The page drinks your ink after \(String(format: "%.1f", settings.pauseDelay)) seconds of rest.",
                       size: 14, opacity: 0.7)
-            InkSlider(value: $settings.pauseDelay, range: 1.0...4.0, step: 0.1)
+            InkSlider(value: $settings.pauseDelay, range: 1.0...6.0, step: 0.1)
             InkCheck(label: "Let the page answer with touch", isOn: $settings.hapticsEnabled)
             InkCheck(label: "Let the diary breathe with sound", isOn: $settings.soundEnabled)
         }

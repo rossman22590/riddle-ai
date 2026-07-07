@@ -43,7 +43,7 @@ final class AppSettings: ObservableObject {
         let storedModel = defaults.string(forKey: Keys.model)
         model          = storedModel ?? Self.defaultModel
         replyHand      = defaults.string(forKey: Keys.hand) ?? "Dancing Script"
-        pauseDelay     = defaults.object(forKey: Keys.pause) as? Double ?? 2.8
+        pauseDelay     = defaults.object(forKey: Keys.pause) as? Double ?? 3.4
         hapticsEnabled = defaults.object(forKey: Keys.haptics) as? Bool ?? true
         soundEnabled   = defaults.object(forKey: Keys.sound) as? Bool ?? true
         drawingEnabled = defaults.object(forKey: Keys.drawing) as? Bool ?? true

@@ -20,6 +20,13 @@ final class CanvasController: ObservableObject {
 
     var isEmpty: Bool { canvas?.drawing.strokes.isEmpty ?? true }
 
+    /// True while a stroke is actively being drawn (pen/finger down), so the
+    /// diary never "drinks" the page out from under an unfinished mark.
+    var isMarking: Bool {
+        guard let state = canvas?.drawingGestureRecognizer.state else { return false }
+        return state == .began || state == .changed
+    }
+
     var inkBounds: CGRect? {
         guard let bounds = canvas?.drawing.bounds, !bounds.isNull, !bounds.isEmpty else { return nil }
         return bounds

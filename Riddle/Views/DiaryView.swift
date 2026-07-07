@@ -464,7 +464,10 @@ struct DiaryView: View {
     }
 
     private func beginDrinking() {
-        guard phase == .idle, !canvas.isEmpty, let image = canvas.snapshot() else { return }
+        guard phase == .idle, !canvas.isEmpty else { return }
+        // Still drawing? Don't drink mid-mark — wait out another rest.
+        guard !canvas.isMarking else { scheduleDrink(); return }
+        guard let image = canvas.snapshot() else { return }
 
         cancelIdleNudge()
         replyDismissWork?.cancel()
