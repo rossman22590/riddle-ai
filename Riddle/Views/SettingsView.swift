@@ -5,6 +5,9 @@ struct SettingsView: View {
     @EnvironmentObject private var settings: AppSettings
     @Environment(\.dismiss) private var dismiss
 
+    /// Re-closes the diary, returning to the cover (the start screen).
+    var onCloseDiary: () -> Void = {}
+
     @State private var keyDraft = ""
     @State private var testing = false
     @State private var testResult: String?
@@ -17,9 +20,9 @@ struct SettingsView: View {
                 handSection
                 pageSection
 
-                InkTextButton("Open the first page again") {
-                    settings.hasOnboarded = false
+                InkTextButton("Close the diary") {
                     dismiss()
+                    onCloseDiary()
                 }
                 .padding(.top, 4)
                 DiaryText("Riddle · write with an Apple Pencil or a fingertip; pause, and the page drinks the ink.",

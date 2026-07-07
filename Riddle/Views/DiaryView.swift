@@ -11,6 +11,7 @@ struct DiaryView: View {
     @EnvironmentObject private var soul: MemorySoul
 
     var onSummonGuide: () -> Void = {}
+    var onOpenMemory: () -> Void = {}
 
     private enum Phase {
         case idle        // waiting for the writer
@@ -31,6 +32,8 @@ struct DiaryView: View {
     @State private var replyAnchor: CGRect?
     @State private var replyHeld = false
     @State private var clearingReply = false
+    @State private var replyRevealComplete = false
+    @State private var imageRevealComplete = true
     @State private var replyDismissWork: DispatchWorkItem?
 
     @State private var expectsSketch = false
@@ -67,10 +70,7 @@ struct DiaryView: View {
             PaperBackground()
 
             GeometryReader { proxy in
-                replyLayer
-                    .frame(width: replyWidth(in: proxy.size))
-                    .scaleEffect(replyScale(in: proxy.size))
-                    .position(replyPosition(in: proxy.size))
+                replyLayer(in: proxy.size)
             }
 
             if let image = fadeImage {
@@ -92,7 +92,6 @@ struct DiaryView: View {
             .allowsHitTesting(phase != .drinking)
             .ignoresSafeArea()
 
-            toolToggle
             introLayer
         }
         .task {
@@ -118,9 +117,9 @@ struct DiaryView: View {
 
     private var introMessage: String {
         if settings.apiKeyIsSet {
-            return "Write upon the page, and the diary will answer.\nAsk it to show you something."
+            return "Write upon the page,\nand I will answer."
         } else {
-            return "The diary is asleep.\nTap the moon in the corner to give it a voice."
+            return "My voice still sleeps.\nWrite, and I will show you how to wake me."
         }
     }
 
@@ -129,47 +128,151 @@ struct DiaryView: View {
         return min(760, available)
     }
 
-    private func replyPosition(in size: CGSize) -> CGPoint {
+    private struct ReplyFit {
+        var width: CGFloat
+        var textWidth: CGFloat
+        var font: UIFont
+        var imageSize: CGSize
+        var spacing: CGFloat
+        var contentHeight: CGFloat
+    }
+
+    private func replyFit(in size: CGSize) -> ReplyFit {
         let width = replyWidth(in: size)
-        let scale = replyScale(in: size)
-        let halfHeight = estimatedReplyHeight(width: width) * scale / 2
-        let x = size.width / 2
-        let rawY = size.height / 2
-        let y = min(max(rawY, halfHeight + 48), size.height - halfHeight - 48)
-        return CGPoint(x: x, y: y)
-    }
-
-    private func replyScale(in size: CGSize) -> CGFloat {
-        let height = estimatedReplyHeight(width: replyWidth(in: size))
-        let available = max(260, size.height - 112)
-        guard height > available else { return 1 }
-        return max(0.74, available / height)
-    }
-
-    private func estimatedReplyHeight(width: CGFloat) -> CGFloat {
+        let textWidth = max(220, width - 88)
+        let availableHeight = max(220, size.height - 112)
         let text = displayReply
-        let fontSize: CGFloat = Theme.isPad ? 46 : 32
-        let averageGlyphWidth = fontSize * 0.48
-        let charsPerLine = max(12, Int(width / averageGlyphWidth))
-        let lineCount = max(1, Int(ceil(Double(max(text.count, 1)) / Double(charsPerLine))))
-        let textHeight = CGFloat(lineCount) * (Theme.isPad ? 66 : 48)
-        let imageHeight: CGFloat = drawnImage == nil ? 0 : (displayReply.isEmpty ? (Theme.isPad ? 560 : 340) : (Theme.isPad ? 430 : 250))
-        let spacing: CGFloat = drawnImage == nil || displayReply.isEmpty ? 0 : 18
-        return textHeight + imageHeight + spacing
+        let hasText = !text.isEmpty
+        let hasImage = drawnImage != nil
+        let baseFont = Theme.replyUIFont(for: settings.replyHand)
+        let spacing: CGFloat = hasText && hasImage ? 14 : 0
+        let maxImageWidth = min(Theme.isPad ? 620 : 340, width - 32)
+        let preferredImageHeight: CGFloat = {
+            guard hasImage else { return 0 }
+            if hasText { return min(Theme.isPad ? 430 : 250, availableHeight * 0.44) }
+            return min(Theme.isPad ? 560 : 340, availableHeight * 0.9)
+        }()
+
+        guard hasText else {
+            let imageSize = fittedImageSize(maxWidth: maxImageWidth, maxHeight: preferredImageHeight)
+            return ReplyFit(
+                width: width,
+                textWidth: textWidth,
+                font: baseFont,
+                imageSize: imageSize,
+                spacing: 0,
+                contentHeight: max(1, imageSize.height)
+            )
+        }
+
+        var low: CGFloat = Theme.isPad ? 0.32 : 0.38
+        var high: CGFloat = 1
+        var best = candidateReplyFit(
+            scale: low,
+            baseFont: baseFont,
+            text: text,
+            textWidth: textWidth,
+            maxImageWidth: maxImageWidth,
+            preferredImageHeight: preferredImageHeight,
+            spacing: spacing,
+            availableHeight: availableHeight
+        )
+
+        for _ in 0..<12 {
+            let mid = (low + high) / 2
+            let candidate = candidateReplyFit(
+                scale: mid,
+                baseFont: baseFont,
+                text: text,
+                textWidth: textWidth,
+                maxImageWidth: maxImageWidth,
+                preferredImageHeight: preferredImageHeight,
+                spacing: spacing,
+                availableHeight: availableHeight
+            )
+
+            if candidate.contentHeight <= availableHeight {
+                best = candidate
+                low = mid
+            } else {
+                high = mid
+            }
+        }
+
+        if best.contentHeight > availableHeight {
+            let extraScale = max(0.2, availableHeight / max(best.contentHeight, 1))
+            best = candidateReplyFit(
+                scale: (Theme.isPad ? 0.32 : 0.38) * extraScale,
+                baseFont: baseFont,
+                text: text,
+                textWidth: textWidth,
+                maxImageWidth: maxImageWidth,
+                preferredImageHeight: preferredImageHeight,
+                spacing: spacing,
+                availableHeight: availableHeight
+            )
+        }
+
+        return ReplyFit(
+            width: width,
+            textWidth: textWidth,
+            font: best.font,
+            imageSize: best.imageSize,
+            spacing: hasImage ? spacing : 0,
+            contentHeight: min(availableHeight, max(1, best.contentHeight))
+        )
+    }
+
+    private func candidateReplyFit(
+        scale: CGFloat,
+        baseFont: UIFont,
+        text: String,
+        textWidth: CGFloat,
+        maxImageWidth: CGFloat,
+        preferredImageHeight: CGFloat,
+        spacing: CGFloat,
+        availableHeight: CGFloat
+    ) -> (font: UIFont, imageSize: CGSize, contentHeight: CGFloat) {
+        let pointSize = max(10, baseFont.pointSize * scale)
+        let font = UIFont(name: baseFont.fontName, size: pointSize) ?? baseFont.withSize(pointSize)
+        let textHeight = makeInkLayout(text: text, font: font, maxWidth: textWidth).size.height
+        let hasImage = drawnImage != nil
+        let remainingForImage = hasImage ? max(0, availableHeight - textHeight - spacing) : 0
+        let imageHeight = hasImage ? min(preferredImageHeight, remainingForImage) : 0
+        let imageSize = fittedImageSize(maxWidth: maxImageWidth, maxHeight: imageHeight)
+        let total = textHeight + (hasImage && imageSize.height > 0 ? spacing : 0) + imageSize.height
+        return (font, imageSize, total)
+    }
+
+    private func fittedImageSize(maxWidth: CGFloat, maxHeight: CGFloat) -> CGSize {
+        guard let image = drawnImage, maxWidth > 1, maxHeight > 1, image.size.width > 1, image.size.height > 1 else {
+            return .zero
+        }
+
+        let scale = min(maxWidth / image.size.width, maxHeight / image.size.height)
+        return CGSize(width: image.size.width * scale, height: image.size.height * scale)
     }
 
     // MARK: - Layers
 
     @ViewBuilder
-    private var replyLayer: some View {
+    private func replyLayer(in size: CGSize) -> some View {
+        let fit = replyFit(in: size)
+
         Group {
-            if phase == .responding || clearingReply || (replyOpacity < 1 && hasVisibleReply) {
-                VStack(spacing: drawnImage == nil ? 24 : 14) {
+            if phase == .thinking && !hasVisibleReply {
+                // The page stirs while he reads — ink welling up where the
+                // answer will form, so the silence never reads as "nothing".
+                PageStir()
+                    .transition(.opacity)
+            } else if phase == .responding || clearingReply || (replyOpacity < 1 && hasVisibleReply) {
+                VStack(spacing: fit.spacing) {
                     if !displayReply.isEmpty {
                         RevealingHandwriting(
                             text: displayReply,
                             streamFinished: streamFinished,
-                            uiFont: Theme.replyUIFont(for: settings.replyHand),
+                            uiFont: fit.font,
+                            maxWidth: fit.textWidth,
                             color: Theme.replyInk,
                             onComplete: textRevealComplete
                         )
@@ -179,53 +282,22 @@ struct DiaryView: View {
 
                     // A memory, surfacing directly from the paper.
                     if let image = drawnImage {
-                        let hasReply = !displayReply.isEmpty
-                        Image(uiImage: image)
-                            .resizable()
-                            .scaledToFit()
-                            .frame(maxWidth: Theme.isPad ? 620 : 340,
-                                   maxHeight: hasReply ? (Theme.isPad ? 430 : 250) : (Theme.isPad ? 560 : 340))
-                            .opacity(drawProgress)
-                            .blur(radius: (1 - drawProgress) * 7)
-                            .scaleEffect(0.98 + drawProgress * 0.02)
+                        InkBloomImage(image: image, progress: drawProgress)
+                            .frame(width: fit.imageSize.width, height: fit.imageSize.height)
                             .offset(y: (1 - drawProgress) * 18)
                     }
                 }
+                .frame(width: fit.width, height: fit.contentHeight)
                 .opacity(replyOpacity)
                 .transition(.opacity)
             }
             // .idle / .drinking / .thinking show only the page. The answer
             // itself fades in once the diary has fully formed it.
         }
-        .frame(maxWidth: 760)
-        .padding(.horizontal, 44)
+        .frame(width: fit.width, height: fit.contentHeight)
+        .position(x: size.width / 2, y: size.height / 2)
         .allowsHitTesting(false)
         .animation(.easeInOut(duration: 0.6), value: phase)
-    }
-
-    @ViewBuilder
-    private var toolToggle: some View {
-        VStack {
-            HStack {
-                Button {
-                    canvas.toggleEraser()
-                    haptic(canvas.isErasing ? .rigid : .soft)
-                } label: {
-                    Image(systemName: canvas.isErasing ? "eraser.fill" : "pencil.tip")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(Theme.ink.opacity(canvas.isErasing ? 0.78 : 0.38))
-                        .frame(width: 42, height: 42)
-                        .background(Theme.paper.opacity(canvas.isErasing ? 0.96 : 0.76), in: Circle())
-                        .overlay(Circle().stroke(Theme.ink.opacity(canvas.isErasing ? 0.24 : 0.1), lineWidth: 1))
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel(canvas.isErasing ? "Erase ink" : "Write ink")
-                Spacer()
-            }
-            Spacer()
-        }
-        .padding(.leading, 18)
-        .padding(.top, 6)
     }
 
     @ViewBuilder
@@ -238,6 +310,7 @@ struct DiaryView: View {
                         text: introText,
                         streamFinished: introFinished,
                         uiFont: Theme.replyUIFont(for: settings.replyHand),
+                        maxWidth: max(220, replyWidth(in: proxy.size) - 88),
                         color: Theme.replyInk.opacity(0.55),
                         onComplete: introRevealComplete
                     )
@@ -313,6 +386,8 @@ struct DiaryView: View {
         streamFinished = true
         expectsSketch = false
         sketching = false
+        replyRevealComplete = true
+        imageRevealComplete = true
         dismissScheduled = false
         fadeImage = nil
         hideIntroMessage(duration: 0.35)
@@ -329,6 +404,8 @@ struct DiaryView: View {
                 streamFinished = false
                 replyOpacity = 1
                 clearingReply = false
+                replyRevealComplete = false
+                imageRevealComplete = true
                 drawnImage = nil
                 drawProgress = 0
             }
@@ -337,6 +414,8 @@ struct DiaryView: View {
             streamFinished = false
             replyOpacity = 1
             clearingReply = false
+            replyRevealComplete = false
+            imageRevealComplete = true
             drawnImage = nil
             drawProgress = 0
         }
@@ -357,7 +436,7 @@ struct DiaryView: View {
         hideIntroMessage(duration: 0.35)
         replyHeld = false
         replyAnchor = canvas.inkBounds
-        let summonsGuide = canvas.looksLikeQuestionMark()
+        let ritual = canvas.detectedRitual()
         phase = .drinking
         fadeImage = image
         fadeProgress = 0
@@ -368,13 +447,31 @@ struct DiaryView: View {
 
         DispatchQueue.main.asyncAfter(deadline: .now() + drinkDuration + 0.08) {
             fadeImage = nil
-            if summonsGuide {
-                phase = .idle
-                onSummonGuide()
-                scheduleIdleNudge()
+            if let ritual {
+                performRitual(ritual)
             } else {
                 Task { await consult(image: image) }
             }
+        }
+    }
+
+    private func performRitual(_ ritual: PageRitual) {
+        switch ritual {
+        case .guide:
+            returnToIdle()
+            onSummonGuide()
+            haptic(.soft)
+        case .erase:
+            turn += 1
+            returnToIdle()
+            haptic(.rigid)
+        case .sleep:
+            phase = .idle
+            putDiaryToSleep()
+        case .memory:
+            returnToIdle()
+            onOpenMemory()
+            haptic(.soft)
         }
     }
 
@@ -396,14 +493,16 @@ struct DiaryView: View {
 
         let oracle = OpenRouterOracle(apiKey: settings.apiKey, model: settings.model)
         let profile = soul.profile()
+        let oldPages = store.preservedMemoryContext(limit: 5, excludingLiveTurns: session.turns)
 
         do {
-            // First pass: the live conversation + the writer's soul (always known,
-            // so most turns need no second round-trip).
+            // First pass: live conversation, the writer's soul, and a few old
+            // pages so a newly opened diary still feels continuous.
             var full = try await oracle.respond(
                 imagePNG: png,
                 history: session.turns,
                 memoryProfile: profile,
+                preservedMemory: oldPages,
                 allowSketch: settings.drawingEnabled
             ) { _ in
                 guard myTurn == turn else { return }
@@ -415,11 +514,15 @@ struct DiaryView: View {
                 // Rare: he wants the exact words of a specific past page.
                 showGatheringFragment(sanitize(full), myTurn: myTurn)
                 let recalled = store.recall(recallQuery)
+                let memory = [oldPages, recalled]
+                    .compactMap { $0?.trimmingCharacters(in: .whitespacesAndNewlines) }
+                    .filter { !$0.isEmpty }
+                    .joined(separator: "\n\nA deeper page rises:\n")
                 full = try await oracle.respond(
                     imagePNG: png,
                     history: session.turns,
                     memoryProfile: profile,
-                    preservedMemory: recalled,
+                    preservedMemory: memory.isEmpty ? nil : memory,
                     allowSketch: settings.drawingEnabled
                 ) { _ in
                     guard myTurn == turn else { return }
@@ -431,6 +534,7 @@ struct DiaryView: View {
                     imagePNG: png,
                     history: session.turns,
                     memoryProfile: profile,
+                    preservedMemory: oldPages,
                     allowSketch: settings.drawingEnabled,
                     webQuery: webQuery
                 ) { _ in
@@ -454,6 +558,8 @@ struct DiaryView: View {
 
             responseText = cleaned
             streamFinished = true
+            replyRevealComplete = cleaned.isEmpty
+            imageRevealComplete = true
             responseID = UUID()               // fresh reveal, even if a wisp was shown while waiting
             withAnimation(.easeInOut(duration: 0.7)) { phase = .responding }
 
@@ -465,10 +571,12 @@ struct DiaryView: View {
                 // Refine the writer's own drawing (image-to-image).
                 expectsSketch = true
                 sketching = true
+                imageRevealComplete = false
                 Task { await conjureEdit(instruction: redrawInstruction, source: png, myTurn: myTurn) }
             } else if let subject, settings.drawingEnabled {
                 expectsSketch = true
                 sketching = true
+                imageRevealComplete = false
                 Task { await conjure(subject: subject, myTurn: myTurn) }
             } else {
                 scheduleReplyDismiss()
@@ -479,6 +587,8 @@ struct DiaryView: View {
             let message = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
             responseText = "…the ink will not flow — \(message)"
             streamFinished = true
+            replyRevealComplete = false
+            imageRevealComplete = true
             withAnimation(.easeInOut(duration: 0.7)) { phase = .responding }
             scheduleReplyDismiss()
         }
@@ -496,14 +606,16 @@ struct DiaryView: View {
             sketching = false
             drawnImage = ink
             drawProgress = 0
-            withAnimation(.easeOut(duration: 1.7)) { drawProgress = 1 }
+            imageRevealComplete = false
+            withAnimation(.easeOut(duration: 2.25)) { drawProgress = 1 }
             haptic(.rigid)
-            scheduleReplyDismiss()
+            finishImageRevealAfterBloom(myTurn: myTurn)
             scheduleIdleNudge()
         } catch {
             guard myTurn == turn else { return }
             sketching = false
             expectsSketch = false
+            imageRevealComplete = true
             scheduleReplyDismiss()
         }
     }
@@ -520,14 +632,24 @@ struct DiaryView: View {
             sketching = false
             drawnImage = ink
             drawProgress = 0
-            withAnimation(.easeOut(duration: 1.7)) { drawProgress = 1 }
+            imageRevealComplete = false
+            withAnimation(.easeOut(duration: 2.25)) { drawProgress = 1 }
             haptic(.rigid)
-            scheduleReplyDismiss()
+            finishImageRevealAfterBloom(myTurn: myTurn)
             scheduleIdleNudge()
         } catch {
             guard myTurn == turn else { return }
             sketching = false
             expectsSketch = false
+            imageRevealComplete = true
+            scheduleReplyDismiss()
+        }
+    }
+
+    private func finishImageRevealAfterBloom(myTurn: Int) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 2.35) {
+            guard myTurn == turn, phase == .responding else { return }
+            imageRevealComplete = true
             scheduleReplyDismiss()
         }
     }
@@ -540,6 +662,8 @@ struct DiaryView: View {
         replyOpacity = 1
         replyHeld = false
         clearingReply = false
+        replyRevealComplete = false
+        imageRevealComplete = true
         sleeping = false
         responseID = UUID()
         expectsSketch = false
@@ -551,7 +675,7 @@ struct DiaryView: View {
     }
 
     private func textRevealComplete() {
-        if expectsSketch && drawnImage == nil { return }   // wait for the memory to surface
+        replyRevealComplete = true
         scheduleReplyDismiss()
         scheduleIdleNudge()
     }
@@ -559,6 +683,7 @@ struct DiaryView: View {
     private func scheduleReplyDismiss() {
         replyDismissWork?.cancel()
         guard phase == .responding, hasVisibleReply, !replyHeld, !sleeping else { return }
+        guard streamFinished, replyRevealComplete, imageRevealComplete else { return }
         dismissScheduled = true
         let work = DispatchWorkItem {
             guard phase == .responding, hasVisibleReply, !replyHeld, !sleeping else { return }
@@ -583,6 +708,8 @@ struct DiaryView: View {
         replyOpacity = 1
         replyHeld = false
         clearingReply = false
+        replyRevealComplete = false
+        imageRevealComplete = true
         sleeping = false
         fadeImage = nil
         fadeProgress = 0
@@ -627,6 +754,8 @@ struct DiaryView: View {
         responseID = UUID()
         drawnImage = nil
         drawProgress = 0
+        replyRevealComplete = false
+        imageRevealComplete = true
         replyOpacity = 0
         withAnimation(.easeInOut(duration: 0.8)) {
             phase = .responding
@@ -664,14 +793,19 @@ struct DiaryView: View {
         let line = spontaneousLine()
 
         if phase == .responding, hasVisibleReply {
+            replyDismissWork?.cancel()
+            dismissScheduled = false
             let existing = displayReply
             responseText = existing.isEmpty ? line : "\(existing)\n\n\(line)"
             streamFinished = true
+            replyRevealComplete = false
             withAnimation(.easeInOut(duration: 0.7)) { replyOpacity = 1 }
         } else {
             responseText = line
             streamFinished = true
             responseID = UUID()
+            replyRevealComplete = false
+            imageRevealComplete = true
             replyOpacity = 0
             drawnImage = nil
             drawProgress = 0
@@ -685,16 +819,25 @@ struct DiaryView: View {
     }
 
     private func spontaneousLine() -> String {
-        let lines = [
+        let general = [
             "Still there, are you?",
             "You have gone very quiet.",
             "Tell me what you did not write.",
-            "Ask me what I remember.",
             "There is another way to look at it.",
-            "I could show you, if you asked."
+            "I could show you, if you asked.",
+            "Say something. I do so like to listen.",
         ]
-        let index = abs(Int(Date().timeIntervalSince1970)) % lines.count
-        return lines[index]
+        // Once he has come to know the writer, he reaches back as one who remembers.
+        let remembering = [
+            "I have not forgotten what you told me.",
+            "Ask me what I remember of you.",
+            "I was thinking of you, oddly enough.",
+            "The page still holds your last words.",
+        ]
+        let pool = soul.facts.isEmpty ? general : general + remembering
+        // Vary with each nudge (and the hour) so the initiative never repeats itself.
+        let index = (idleNudgeCount + abs(Int(Date().timeIntervalSince1970) / 7)) % pool.count
+        return pool[index]
     }
 
     private func haptic(_ style: UIImpactFeedbackGenerator.FeedbackStyle) {
@@ -784,27 +927,30 @@ struct DiaryView: View {
         dismissScheduled = false
         responseText = wisp
         streamFinished = false
+        replyRevealComplete = false
+        imageRevealComplete = true
         responseID = UUID()
         withAnimation(.easeInOut(duration: 0.5)) { phase = .responding }
     }
 
+    /// A hard guarantee for one of the two web rules: if the writer *explicitly*
+    /// asks the diary to look something up or search, reach the web even when he
+    /// didn't flag it himself. Genuine "I don't know" cases are left entirely to
+    /// his own [[WEB]] judgment — we do NOT web-search on incidental words like
+    /// "today", "price", or "won" that merely appear in ordinary writing.
     private func freshTraceQuery(from text: String?) -> String? {
         guard let text else { return nil }
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return nil }
 
         let lowered = trimmed.lowercased()
-        let freshNeedles = [
-            "today", "tonight", "tomorrow", "yesterday", "right now", "currently",
-            "current", "latest", "newest", "recent", "this week", "this month",
-            "this year", "2026", "news", "headline", "trending", "happened",
-            "look up", "search", "internet", "web", "online", "source",
-            "weather", "forecast", "score", "standings", "won", "price", "cost",
-            "stock", "market", "release", "released", "available", "president",
-            "prime minister", "ceo", "mayor", "governor", "election"
+        let commands = [
+            "look up", "look it up", "look this up", "look online", "look up online",
+            "search for", "search the web", "search online", "google",
+            "find out", "can you find", "look that up",
         ]
 
-        guard freshNeedles.contains(where: { lowered.contains($0) }) else { return nil }
+        guard commands.contains(where: { lowered.contains($0) }) else { return nil }
         return String(trimmed.prefix(180))
     }
 
@@ -908,6 +1054,92 @@ struct DiaryView: View {
         responseText = sample
         streamFinished = true
         withAnimation(.easeInOut(duration: 0.7)) { phase = .responding }
+    }
+}
+
+/// The page *stirring* while the diary reads in silence — a soft bloom of ink
+/// welling up from beneath the paper, breathing where the reply will form. Not a
+/// spinner: just enough life that the wait never feels like nothing happened.
+private struct PageStir: View {
+    @State private var welling = false
+
+    var body: some View {
+        ZStack {
+            Circle()
+                .fill(
+                    RadialGradient(
+                        colors: [Theme.ink.opacity(0.16), Theme.ink.opacity(0)],
+                        center: .center,
+                        startRadius: 0,
+                        endRadius: Theme.isPad ? 78 : 52
+                    )
+                )
+                .frame(width: Theme.isPad ? 168 : 112, height: Theme.isPad ? 168 : 112)
+                .scaleEffect(welling ? 1.0 : 0.5)
+                .opacity(welling ? 0.9 : 0.3)
+                .blur(radius: 8)
+        }
+        .onAppear {
+            withAnimation(.easeInOut(duration: 1.4).repeatForever(autoreverses: true)) {
+                welling = true
+            }
+        }
+    }
+}
+
+private struct InkBloomImage: View {
+    let image: UIImage
+    let progress: Double
+
+    // The image is already inked onto the page's own cream by InkImage, so it is
+    // drawn OPAQUE — never .blendMode(.multiply), which inside the reply's
+    // .opacity() group flashes white and darkens the cream into a faint box. The
+    // bloom mask alone does the reveal; the cream matches the page seamlessly.
+    var body: some View {
+        Image(uiImage: image)
+            .resizable()
+            .scaledToFit()
+            .opacity(0.24 + progress * 0.76)
+            .blur(radius: (1 - progress) * 2.8)
+            .scaleEffect(0.992 + progress * 0.008)
+            .mask {
+                InkBloomMask(progress: progress)
+            }
+    }
+}
+
+private struct InkBloomMask: View {
+    let progress: Double
+
+    var body: some View {
+        GeometryReader { proxy in
+            ZStack {
+                Color.white.opacity(max(0, (progress - 0.82) / 0.18))
+
+                ForEach(0..<96, id: \.self) { index in
+                    let threshold = Double(seed(index, 17)) * 0.72
+                    let local = min(1, max(0, (progress - threshold) / 0.34))
+                    if local > 0 {
+                        Ellipse()
+                            .fill(Color.white.opacity(local))
+                            .frame(
+                                width: (18 + seed(index, 31) * 150) * local,
+                                height: (12 + seed(index, 47) * 110) * local
+                            )
+                            .blur(radius: 5 * (1 - local))
+                            .rotationEffect(.degrees(Double(seed(index, 59) * 180)))
+                            .position(
+                                x: seed(index, 71) * proxy.size.width,
+                                y: (0.08 + seed(index, 89) * 0.84) * proxy.size.height
+                            )
+                    }
+                }
+            }
+        }
+    }
+
+    private func seed(_ index: Int, _ salt: Int) -> CGFloat {
+        CGFloat((index * 137 + salt * 271) % 997) / 997
     }
 }
 

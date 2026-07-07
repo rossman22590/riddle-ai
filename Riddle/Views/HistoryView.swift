@@ -3,10 +3,11 @@ import SwiftUI
 /// The diary's memory — past exchanges, rendered as pages rather than a list.
 struct HistoryView: View {
     @EnvironmentObject private var store: DiaryStore
+    @EnvironmentObject private var soul: MemorySoul
 
     var body: some View {
         DiarySheet(title: "The Diary's Memory") {
-            if store.entries.isEmpty {
+            if store.entries.isEmpty && soul.facts.isEmpty {
                 VStack(spacing: 12) {
                     Text("These pages are yet unwritten.")
                         .font(Theme.display(Theme.isPad ? 34 : 28))
@@ -29,14 +30,22 @@ struct HistoryView: View {
                         }
                     }
 
-                    Button(role: .destructive) { store.clear() } label: {
-                        Text("Forget these pages")
-                            .font(.system(size: 15, weight: .regular, design: .serif))
-                            .foregroundStyle(Theme.accent)
+                    VStack(spacing: 8) {
+                        Button(role: .destructive) {
+                            store.clear()
+                            soul.forget()
+                        } label: {
+                            Text("Forget everything")
+                                .font(.system(size: 16, weight: .regular, design: .serif))
+                                .foregroundStyle(Theme.accent)
+                        }
+                        .buttonStyle(.plain)
+                        DiaryText("Clears every kept page and all the diary has come to know of you.",
+                                  size: 12, opacity: 0.45)
+                            .multilineTextAlignment(.center)
                     }
-                    .buttonStyle(.plain)
                     .frame(maxWidth: .infinity)
-                    .padding(.top, 34)
+                    .padding(.top, store.entries.isEmpty ? 24 : 34)
                 }
             }
         }

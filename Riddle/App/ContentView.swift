@@ -9,17 +9,23 @@ struct ContentView: View {
     @State private var showSettings = false
     @State private var showHistory = false
     @State private var route: Route = .none
+    @State private var coverClosed = true       // the diary greets every opening closed
 
     var body: some View {
         ZStack {
-            // Pure ink on paper. The guide is summoned by a two-finger tap or a
-            // drawn "?"; the corner mark only wakes an unbound diary.
-            DiaryView(onSummonGuide: { showGuide = true })
+            // Pure ink on paper — no chrome at all. The guide is summoned by a
+            // two-finger tap or a drawn "?"; writing on a voiceless diary opens
+            // the guide too, so an unbound diary still has somewhere to begin.
+            DiaryView(
+                onSummonGuide: { showGuide = true },
+                onOpenMemory: { showHistory = true }
+            )
 
-            seal
-        }
-        .fullScreenCover(isPresented: .constant(!settings.hasOnboarded)) {
-            OnboardingView { settings.hasOnboarded = true }
+            // The closed cover, filling the screen until the writer touches it.
+            if coverClosed {
+                DiaryGate { coverClosed = false }
+                    .zIndex(1)
+            }
         }
         .onAppear {
             if ProcessInfo.processInfo.arguments.contains("-openSettings") { showSettings = true }
@@ -37,38 +43,9 @@ struct ContentView: View {
                 onHistory: { route = .history; showGuide = false }
             )
         }
-        .sheet(isPresented: $showSettings) { SettingsView() }
-        .sheet(isPresented: $showHistory) { HistoryView() }
-    }
-
-    /// No visible chrome once the diary is awake. Before a key is bound, leave
-    /// only a faint moon-mark so the first opening has somewhere to begin.
-    private var seal: some View {
-        VStack {
-            HStack {
-                Spacer()
-                Button {
-                    // No voice yet? Go straight to the key. Otherwise, the guide.
-                    if settings.apiKeyIsSet { showGuide = true } else { showSettings = true }
-                } label: {
-                    if settings.apiKeyIsSet {
-                        Color.clear
-                            .frame(width: 44, height: 44)
-                            .contentShape(Circle())
-                    } else {
-                        Image(systemName: "moon.zzz")
-                            .font(.system(size: 15, weight: .medium))
-                            .foregroundStyle(Theme.ink.opacity(0.42))
-                            .frame(width: 44, height: 44)
-                            .contentShape(Circle())
-                    }
-                }
-                .buttonStyle(.plain)
-                .accessibilityLabel("Guide")
-            }
-            Spacer()
+        .sheet(isPresented: $showSettings) {
+            SettingsView(onCloseDiary: { coverClosed = true })
         }
-        .padding(.trailing, 18)
-        .padding(.top, 6)
+        .sheet(isPresented: $showHistory) { HistoryView() }
     }
 }

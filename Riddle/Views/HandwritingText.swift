@@ -69,10 +69,14 @@ func makeInkLayout(text: String, font: UIFont, maxWidth: CGFloat) -> InkLayout {
                 // baseline and tilts a hair — a smooth wave plus fine jitter,
                 // seeded by position so it's stable, never a wall of clones.
                 let seed = Double(paths.count)
-                let tilt = lineTilt + sin(seed * 12.9898) * 0.018
-                let drift = lineDrift + sin(seed * 0.7) * 1.35 + sin(seed * 78.233) * 0.72
-                var transform = CGAffineTransform(rotationAngle: tilt)
-                    .concatenating(CGAffineTransform(translationX: gx, y: gy + drift))
+                let tilt = lineTilt + sin(seed * 12.9898) * 0.021
+                let drift = lineDrift + sin(seed * 0.7) * 1.45 + sin(seed * 78.233) * 0.86
+                let sideDrift = sin(seed * 37.719) * 0.48
+                let stretchX = 1 + sin(seed * 5.313) * 0.007
+                let stretchY = 1 + sin(seed * 9.710) * 0.005
+                var transform = CGAffineTransform(scaleX: stretchX, y: stretchY)
+                    .concatenating(CGAffineTransform(rotationAngle: tilt))
+                    .concatenating(CGAffineTransform(translationX: gx + sideDrift, y: gy + drift))
                     .concatenating(flip)
 
                 if let glyphPath = CTFontCreatePathForGlyph(ctFont, glyphs[glyphIndex], nil),
@@ -98,6 +102,7 @@ struct RevealingHandwriting: View {
     let text: String
     var streamFinished: Bool
     var uiFont: UIFont
+    var maxWidth: CGFloat? = nil
     var color: Color
     var onComplete: () -> Void
 
@@ -105,11 +110,11 @@ struct RevealingHandwriting: View {
     @State private var completed = false
     @State private var layout = InkLayout(paths: [], frames: [], size: .zero)
 
-    private let glyphsPerSecond: Double = 16
+    private let glyphsPerSecond: Double = 15.2
     private let tick = Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()
 
-    private var maxWidth: CGFloat {
-        min(Theme.isPad ? 660 : 340, UIScreen.main.bounds.width - 72)
+    private var layoutMaxWidth: CGFloat {
+        maxWidth ?? min(Theme.isPad ? 660 : 340, UIScreen.main.bounds.width - 72)
     }
 
     var body: some View {
@@ -123,7 +128,7 @@ struct RevealingHandwriting: View {
     }
 
     private func rebuild() {
-        layout = makeInkLayout(text: text, font: uiFont, maxWidth: maxWidth)
+        layout = makeInkLayout(text: text, font: uiFont, maxWidth: layoutMaxWidth)
         revealed = 0
         completed = false
     }
@@ -132,7 +137,8 @@ struct RevealingHandwriting: View {
         let target = Double(layout.glyphCount)
         if revealed < target {
             let rhythm = 0.72 + 0.5 * (0.5 + 0.5 * sin(revealed * 1.2))   // a hand's cadence
-            revealed = min(target, revealed + (glyphsPerSecond * rhythm) / 60.0)
+            let unevenness = 0.9 + 0.18 * (0.5 + 0.5 * sin(revealed * 2.73))
+            revealed = min(target, revealed + (glyphsPerSecond * rhythm * unevenness) / 60.0)
         }
         if !completed, streamFinished, target > 0, revealed >= target {
             completed = true
@@ -157,11 +163,11 @@ struct RevealingHandwriting: View {
 
                 // For a breath after the nib leaves, the stroke is still wet and
                 // darker along its edge. Subtle enough to feel like pressure.
-                let wetness = max(0, 1.45 - recency) / 1.45
+                let wetness = max(0, 1.7 - recency) / 1.7
                 if wetness > 0 {
                     context.stroke(
                         path,
-                        with: .color(color.opacity(0.13 * wetness)),
+                        with: .color(color.opacity(0.15 * wetness)),
                         style: StrokeStyle(lineWidth: lineWidth * 2.2, lineCap: .round, lineJoin: .round)
                     )
                 }
@@ -192,7 +198,7 @@ struct RevealingHandwriting: View {
             }
             context.fill(
                 Path(ellipseIn: CGRect(x: nib.x - 3.0, y: nib.y - 3.6, width: 2.1, height: 2.1)),
-                with: .color(.white.opacity(0.28))
+                with: .color(Theme.paper.opacity(0.38))
             )
         }
     }

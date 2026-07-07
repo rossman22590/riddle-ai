@@ -31,15 +31,16 @@ struct OpenRouterOracle {
             ],
             ["type": "image_url", "image_url": ["url": dataURI]],
         ]
-        // The first pass carries no saved memory — the live conversation is all
-        // Tom sees until he chooses to reach into older pages via [[RECALL]].
-        let firstPass = webQuery == nil && (preservedMemory?.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty ?? true)
+        // First passes may carry a few saved pages. RECALL still lets Tom reach
+        // deeper when an exact old phrase matters.
+        let firstPass = webQuery == nil
         let system = diarySystemPrompt
             + (webQuery == nil ? webEscalationDirective : webSearchDirective)
             + (firstPass ? memoryRecallDirective : "")
             + memoryDistillDirective
             + (allowSketch ? sketchDirective : "")
             + readingDirective
+            + visibleBrevityDirective
         var messages: [[String: Any]] = [["role": "system", "content": system]]
 
         // The writer's soul travels with every turn — small enough to cost little,
@@ -48,7 +49,7 @@ struct OpenRouterOracle {
             messages.append([
                 "role": "system",
                 "content": """
-                What you have come to know of this writer, kept in these pages across every opening — their soul. Speak as one who truly knows them: weave it in naturally, and notice patterns — a word they keep circling, a thing they avoid, a fear they will not name. Never recite this back as a list.
+                What you have come to know of this writer, kept in these pages across every opening — their soul. Speak as one who truly knows them: weave it in naturally, and notice patterns — a word they keep circling, a thing they avoid, a fear they will not name, a phrase returning in disguise. When one memory genuinely touches the new ink, use one brief callback. Never recite this back as a list.
 
                 \(memoryProfile)
                 """
@@ -85,8 +86,11 @@ struct OpenRouterOracle {
         var payload: [String: Any] = [
             "model": model,
             "messages": messages,
+            // The visible reply stays short by instruction, but the hidden
+            // bookkeeping lines (READ transcription, MEMORY, WEB) trail after it;
+            // too tight a cap silently truncates them and recall/soul degrade.
             "stream": true,
-            "max_tokens": 500,
+            "max_tokens": 420,
         ]
         if webQuery != nil {
             payload["tools"] = Self.webSearchTools
@@ -147,14 +151,14 @@ struct OpenRouterOracle {
     ]
 
     /// Conjures a fresh ink illustration of `subject`. The prompt forces
-    /// monochrome pen-and-ink on white.
+    /// monochrome pen-and-ink on the diary's cream paper.
     func draw(subject: String, model imageModel: String) async throws -> Data {
         try await requestImage(model: imageModel, content: [["type": "text", "text": inkStylePrompt(for: subject)]])
     }
 
     /// Refines the writer's *own* drawing: the committed page is sent back to
     /// the image model with an ink instruction (image-to-image), so the diary
-    /// perfects what they drew — still borderless ink on white.
+    /// perfects what they drew — still borderless ink on cream paper.
     func redraw(instruction: String, source: Data, model imageModel: String) async throws -> Data {
         let dataURI = "data:image/png;base64,\(source.base64EncodedString())"
         return try await requestImage(model: imageModel, content: [

@@ -4,18 +4,34 @@
     "Localizable": [
       {
         "comment": "",
-        "key": "Begin",
+        "key": "touch the page to begin",
         "location": {
-          "startingColumn": 52,
-          "startingLine": 56
+          "startingColumn": 22,
+          "startingLine": 73
         }
       },
       {
         "comment": "",
-        "key": "Skip",
+        "key": "T. M. RIDDLE",
         "location": {
-          "startingColumn": 62,
-          "startingLine": 56
+          "startingColumn": 22,
+          "startingLine": 158
+        }
+      },
+      {
+        "comment": "",
+        "key": "· 1943 ·",
+        "location": {
+          "startingColumn": 22,
+          "startingLine": 164
+        }
+      },
+      {
+        "comment": "",
+        "key": "S",
+        "location": {
+          "startingColumn": 18,
+          "startingLine": 204
         }
       }
     ]

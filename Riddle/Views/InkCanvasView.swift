@@ -4,11 +4,17 @@ import UIKit
 
 private let diaryInkWidth: CGFloat = 6
 
+enum PageRitual {
+    case guide
+    case erase
+    case sleep
+    case memory
+}
+
 /// Bridges the PencilKit canvas to SwiftUI, and exposes snapshot/clear so the
 /// diary can "drink" the ink.
 final class CanvasController: ObservableObject {
     weak var canvas: PKCanvasView?
-    @Published private(set) var isErasing = false
 
     private var inkColor: UIColor = .black
 
@@ -29,13 +35,13 @@ final class CanvasController: ObservableObject {
 
     func clear() {
         canvas?.drawing = PKDrawing()
-        setInk()
+        applyInkTool()
     }
 
     func attach(to canvas: PKCanvasView, inkColor: UIColor) {
         self.canvas = canvas
         self.inkColor = inkColor
-        applyActiveTool()
+        applyInkTool()
         DispatchQueue.main.async { canvas.becomeFirstResponder() }
     }
 
@@ -43,36 +49,31 @@ final class CanvasController: ObservableObject {
         self.canvas = canvas
         guard !inkColor.isEqual(color) else { return }
         inkColor = color
-        if !isErasing { applyActiveTool() }
-    }
-
-    func toggleEraser() {
-        isErasing.toggle()
-        applyActiveTool()
-    }
-
-    func setInk() {
-        isErasing = false
-        applyActiveTool()
+        applyInkTool()
     }
 
     private var inkTool: PKInkingTool {
         PKInkingTool(.pen, color: inkColor, width: diaryInkWidth)
     }
 
-    private func applyActiveTool() {
+    private func applyInkTool() {
         guard let canvas else { return }
-        canvas.tool = isErasing ? PKEraserTool(.vector) : inkTool
+        canvas.tool = inkTool
+    }
+
+    func detectedRitual() -> PageRitual? {
+        if looksLikeQuestionMark() { return .guide }
+        if looksLikeEraseMark() { return .erase }
+        if looksLikeSleepMark() { return .sleep }
+        if looksLikeMemoryMark() { return .memory }
+        return nil
     }
 
     /// Local ritual: a lone, oversized question mark summons the guide without
     /// asking the oracle. The check is deliberately forgiving; a false positive
     /// only opens help.
     func looksLikeQuestionMark() -> Bool {
-        guard let strokes = canvas?.drawing.strokes else { return false }
-        let pointStrokes = strokes
-            .map { stroke in stroke.path.map(\.location) }
-            .filter { $0.count > 4 }
+        let pointStrokes = pointStrokes()
         guard !pointStrokes.isEmpty, pointStrokes.count <= 3 else { return false }
 
         let mainIndex = pointStrokes.indices.max { pointStrokes[$0].count < pointStrokes[$1].count } ?? 0
@@ -121,10 +122,115 @@ final class CanvasController: ObservableObject {
         return true
     }
 
+    /// A large two-stroke X wipes the page. It must be oversized and alone so
+    /// ordinary crossed letters do not become commands.
+    private func looksLikeEraseMark() -> Bool {
+        let strokes = pointStrokes()
+        guard strokes.count == 2 else { return false }
+
+        let all = strokes.flatMap { $0 }
+        let whole = bounds(of: all)
+        guard whole.width > 150, whole.height > 150 else { return false }
+        guard whole.width / whole.height > 0.45, whole.width / whole.height < 2.2 else { return false }
+
+        var slopes = Set<Int>()
+        for stroke in strokes {
+            let b = bounds(of: stroke)
+            guard b.width > whole.width * 0.5, b.height > whole.height * 0.5 else { return false }
+            guard let first = stroke.first, let last = stroke.last else { return false }
+            let dx = last.x - first.x
+            let dy = last.y - first.y
+            guard abs(dx) > b.width * 0.55, abs(dy) > b.height * 0.55 else { return false }
+            slopes.insert(dx * dy >= 0 ? 1 : -1)
+        }
+
+        return slopes.count == 2
+    }
+
+    /// A big Z puts the diary to sleep. It is intentionally stricter than help
+    /// because sleep should never trigger from normal handwriting.
+    private func looksLikeSleepMark() -> Bool {
+        let strokes = pointStrokes()
+        guard strokes.count == 1, let points = strokes.first, points.count >= 18 else { return false }
+
+        let b = bounds(of: points)
+        guard b.width > 150, b.height > 90, b.width > b.height * 1.05 else { return false }
+        guard let first = points.first, let last = points.last else { return false }
+        guard first.x < b.midX, first.y < b.minY + b.height * 0.38 else { return false }
+        guard last.x > b.midX, last.y > b.minY + b.height * 0.62 else { return false }
+
+        let third = points.count / 3
+        let top = Array(points.prefix(third))
+        let middle = Array(points.dropFirst(third).prefix(third))
+        let bottom = Array(points.suffix(points.count - third * 2))
+        let topBounds = bounds(of: top)
+        let middleBounds = bounds(of: middle)
+        let bottomBounds = bounds(of: bottom)
+
+        guard topBounds.width > b.width * 0.35, topBounds.height < b.height * 0.36 else { return false }
+        guard topBounds.midY < b.minY + b.height * 0.38 else { return false }
+        guard middleBounds.width > b.width * 0.32, middleBounds.height > b.height * 0.34 else { return false }
+        guard bottomBounds.width > b.width * 0.35, bottomBounds.height < b.height * 0.36 else { return false }
+        guard bottomBounds.midY > b.minY + b.height * 0.62 else { return false }
+
+        return true
+    }
+
+    /// A large S opens memory. It has to be oversized and alone, with the
+    /// familiar upper/lower sweep, so a normal word does not become a command.
+    private func looksLikeMemoryMark() -> Bool {
+        let strokes = pointStrokes()
+        guard strokes.count == 1, let points = strokes.first, points.count >= 24 else { return false }
+
+        let b = bounds(of: points)
+        guard b.height > 150, b.width > 70 else { return false }
+        guard b.height > b.width * 1.05, b.width > b.height * 0.28 else { return false }
+        guard let first = points.first, let last = points.last else { return false }
+        guard first.y < b.minY + b.height * 0.38 else { return false }
+        guard last.y > b.minY + b.height * 0.62 else { return false }
+        guard distance(first, last) > min(b.width, b.height) * 0.35 else { return false }
+
+        let top = points.filter { $0.y <= b.minY + b.height * 0.38 }
+        let middle = points.filter { $0.y > b.minY + b.height * 0.30 && $0.y < b.minY + b.height * 0.70 }
+        let bottom = points.filter { $0.y >= b.minY + b.height * 0.62 }
+        guard !top.isEmpty, !middle.isEmpty, !bottom.isEmpty else { return false }
+
+        let topBounds = bounds(of: top)
+        let middleBounds = bounds(of: middle)
+        let bottomBounds = bounds(of: bottom)
+        guard topBounds.width > b.width * 0.42 else { return false }
+        guard middleBounds.width > b.width * 0.48 else { return false }
+        guard bottomBounds.width > b.width * 0.42 else { return false }
+        guard middleBounds.minX < b.midX, middleBounds.maxX > b.midX else { return false }
+
+        var turns = 0
+        var lastDirection = 0
+        for pair in zip(points, points.dropFirst()) {
+            let dx = pair.1.x - pair.0.x
+            guard abs(dx) > max(2.5, b.width * 0.018) else { continue }
+            let direction = dx > 0 ? 1 : -1
+            if lastDirection != 0, direction != lastDirection { turns += 1 }
+            lastDirection = direction
+        }
+
+        return turns >= 2
+    }
+
+    private func pointStrokes(minPoints: Int = 5) -> [[CGPoint]] {
+        guard let strokes = canvas?.drawing.strokes else { return [] }
+        return strokes
+            .map { stroke in stroke.path.map(\.location) }
+            .filter { $0.count >= minPoints }
+    }
+
     private func bounds(of points: [CGPoint]) -> CGRect {
         points.reduce(CGRect.null) { partial, point in
             partial.union(CGRect(x: point.x, y: point.y, width: 1, height: 1))
         }
+    }
+
+    private func distance(_ a: CGPoint, _ b: CGPoint) -> CGFloat {
+        hypot(a.x - b.x, a.y - b.y)
     }
 }
 
@@ -236,7 +342,6 @@ struct InkCanvasView: UIViewRepresentable {
         }
 
         func pencilInteractionDidTap(_ interaction: UIPencilInteraction) {
-            controller.toggleEraser()
         }
 
         func gestureRecognizer(_ gestureRecognizer: UIGestureRecognizer, shouldRecognizeSimultaneouslyWith otherGestureRecognizer: UIGestureRecognizer) -> Bool {

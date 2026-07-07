@@ -15,12 +15,14 @@ struct GuideView: View {
                 VStack(alignment: .leading, spacing: 20) {
                     row("pencil.line", "Write, then rest your pen",
                         "The diary drinks your ink and answers in its own hand.")
-                    row("eraser", "Tap the pencil mark to erase",
-                        "Or double-tap the Pencil; switch back before the page drinks it.")
+                    row("xmark", "Draw a large  X",
+                        "Wipes the page without opening any controls.")
                     row("questionmark", "Draw a  ?  on the page",
                         "Summons this guide, at any time.")
-                    row("hand.tap", "Tap with two fingers",
-                        "Also summons this guide.")
+                    row("s.circle", "Draw a large S",
+                        "Opens the diary's memory.")
+                    row("moon.zzz", "Draw a large  Z",
+                        "Lets the diary sleep.")
                 }
 
                 VStack(spacing: 12) {
