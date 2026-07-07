@@ -176,10 +176,10 @@ final class CanvasController: ObservableObject {
         return true
     }
 
-    /// A large V opens memory — matching the seal on the diary's cover. One
-    /// stroke: down from the upper-left to a point near the bottom-centre, then
-    /// back up to the upper-right. Oversized and alone so an ordinary letter
-    /// "v" or a small checkmark never becomes a command.
+    /// A large V opens the diary's memory. One stroke: down from the upper-left
+    /// to a point near the bottom-centre, then back up to the upper-right.
+    /// Oversized and alone so an ordinary letter "v" or a small checkmark never
+    /// becomes a command.
     private func looksLikeMemoryMark() -> Bool {
         let strokes = pointStrokes()
         guard strokes.count == 1, let points = strokes.first, points.count >= 10 else { return false }

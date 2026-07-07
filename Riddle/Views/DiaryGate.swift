@@ -130,9 +130,9 @@ struct DiaryGate: View {
                 .strokeBorder(oxbloodLo.opacity(0.85), lineWidth: 1.5)
                 .frame(width: d * 0.72, height: d * 0.72)
 
-            // The initial pressed into the wax.
-            Text("V")
-                .font(.custom("DancingScript-Regular", size: d * 0.52))
+            // Tom Riddle's monogram, pressed into the wax.
+            Text("TR")
+                .font(.system(size: d * 0.34, weight: .semibold, design: .serif))
                 .foregroundStyle(oxbloodLo)
                 .shadow(color: .white.opacity(0.14), radius: 0.5, x: 0, y: -0.8)
                 .shadow(color: .black.opacity(0.5), radius: 0.6, x: 0, y: 1.2)

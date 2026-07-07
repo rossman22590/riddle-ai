@@ -6,6 +6,7 @@ final class AppSettings: ObservableObject {
     private let defaults = UserDefaults.standard
 
     @Published var hasOnboarded: Bool { didSet { defaults.set(hasOnboarded, forKey: Keys.onboarded) } }
+    @Published var hasSeenMarks: Bool  { didSet { defaults.set(hasSeenMarks, forKey: Keys.seenMarks) } }
     @Published var model: String       { didSet { defaults.set(model, forKey: Keys.model) } }
     @Published var replyHand: String   { didSet { defaults.set(replyHand, forKey: Keys.hand) } }
     @Published var pauseDelay: Double   { didSet { defaults.set(pauseDelay, forKey: Keys.pause) } }
@@ -23,6 +24,7 @@ final class AppSettings: ObservableObject {
 
     private enum Keys {
         static let onboarded = "hasOnboarded"
+        static let seenMarks = "hasSeenMarks"
         static let model = "model"
         static let hand = "replyHand"
         static let pause = "pauseDelay"
@@ -35,6 +37,7 @@ final class AppSettings: ObservableObject {
 
     init() {
         hasOnboarded   = defaults.bool(forKey: Keys.onboarded)
+        hasSeenMarks   = defaults.bool(forKey: Keys.seenMarks)
         let storedModel = defaults.string(forKey: Keys.model)
         model          = storedModel ?? Self.defaultModel
         replyHand      = defaults.string(forKey: Keys.hand) ?? "Dancing Script"

@@ -109,8 +109,9 @@ struct RevealingHandwriting: View {
     @State private var revealed: Double = 0
     @State private var completed = false
     @State private var layout = InkLayout(paths: [], frames: [], size: .zero)
+    @State private var characters: [Character] = []
 
-    private let glyphsPerSecond: Double = 15.2
+    private let glyphsPerSecond: Double = 12.2
     private let tick = Timer.publish(every: 1.0 / 60.0, on: .main, in: .common).autoconnect()
 
     private var layoutMaxWidth: CGFloat {
@@ -129,6 +130,7 @@ struct RevealingHandwriting: View {
 
     private func rebuild() {
         layout = makeInkLayout(text: text, font: uiFont, maxWidth: layoutMaxWidth)
+        characters = Array(text)
         revealed = 0
         completed = false
     }
@@ -136,13 +138,30 @@ struct RevealingHandwriting: View {
     private func advance() {
         let target = Double(layout.glyphCount)
         if revealed < target {
-            let rhythm = 0.72 + 0.5 * (0.5 + 0.5 * sin(revealed * 1.2))   // a hand's cadence
-            let unevenness = 0.9 + 0.18 * (0.5 + 0.5 * sin(revealed * 2.73))
-            revealed = min(target, revealed + (glyphsPerSecond * rhythm * unevenness) / 60.0)
+            let rhythm = 0.62 + 0.42 * (0.5 + 0.5 * sin(revealed * 1.2))   // a hand's cadence
+            let unevenness = 0.82 + 0.24 * (0.5 + 0.5 * sin(revealed * 2.73))
+            let hesitation = hesitationMultiplier(at: Int(revealed))
+            revealed = min(target, revealed + (glyphsPerSecond * rhythm * unevenness * hesitation) / 60.0)
         }
         if !completed, streamFinished, target > 0, revealed >= target {
             completed = true
             onComplete()
+        }
+    }
+
+    private func hesitationMultiplier(at index: Int) -> Double {
+        guard index >= 0, index < characters.count else { return 1 }
+        switch characters[index] {
+        case ".", "!", "?":
+            return 0.28
+        case ",", ";", ":":
+            return 0.48
+        case "\n":
+            return 0.38
+        case " ":
+            return 1.35
+        default:
+            return 1
         }
     }
 
