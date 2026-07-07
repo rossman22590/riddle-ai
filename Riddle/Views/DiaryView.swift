@@ -146,17 +146,29 @@ struct DiaryView: View {
         let hasImage = drawnImage != nil
         let baseFont = Theme.replyUIFont(for: settings.replyHand)
         let spacing: CGFloat = hasText && hasImage ? 14 : 0
-        let maxImageWidth = min(Theme.isPad ? 620 : 340, width - 32)
+        // In landscape the page is wide but short — size the ink by the whole
+        // width (not the narrow reading column), and let it claim far more of
+        // the height so a drawing never shrinks to a stamp.
+        let landscape = size.width > size.height
+        let maxImageWidth = min(size.width - 48,
+                                Theme.isPad ? (landscape ? 900 : 620) : (landscape ? 620 : 340))
         let preferredImageHeight: CGFloat = {
             guard hasImage else { return 0 }
-            if hasText { return min(Theme.isPad ? 430 : 250, availableHeight * 0.44) }
-            return min(Theme.isPad ? 560 : 340, availableHeight * 0.9)
+            // A cap only — if the reply text is long it takes its share first and
+            // the image shrinks to fit; when it's a short caption (as it is when
+            // he draws) the ink grows into most of the page, even in landscape.
+            if hasText {
+                return min(availableHeight * (landscape ? 0.82 : 0.44),
+                           Theme.isPad ? (landscape ? 740 : 430) : (landscape ? 470 : 250))
+            }
+            return min(availableHeight * 0.92,
+                       Theme.isPad ? (landscape ? 800 : 560) : (landscape ? 480 : 340))
         }()
 
         guard hasText else {
             let imageSize = fittedImageSize(maxWidth: maxImageWidth, maxHeight: preferredImageHeight)
             return ReplyFit(
-                width: width,
+                width: max(width, imageSize.width + 32),
                 textWidth: textWidth,
                 font: baseFont,
                 imageSize: imageSize,
@@ -214,7 +226,7 @@ struct DiaryView: View {
         }
 
         return ReplyFit(
-            width: width,
+            width: max(width, best.imageSize.width + 32),
             textWidth: textWidth,
             font: best.font,
             imageSize: best.imageSize,
@@ -543,8 +555,11 @@ struct DiaryView: View {
                 guard myTurn == turn else { return }
             }
 
-            let subject = extractSketch(full)
             let redrawInstruction = extractRedraw(full)
+            // If the writer plainly asked to draw, guarantee a drawing even when
+            // he didn't tag it himself (as long as there's no redraw of their ink).
+            let subject = extractSketch(full)
+                ?? (redrawInstruction == nil ? forcedSketchSubject(from: firstRead) : nil)
             let writer = extractRead(full)
             let cleaned = sanitize(full)
 
@@ -952,6 +967,31 @@ struct DiaryView: View {
 
         guard commands.contains(where: { lowered.contains($0) }) else { return nil }
         return String(trimmed.prefix(180))
+    }
+
+    /// A hard guarantee: if the writer plainly asks for a drawing ("draw a…",
+    /// "sketch me…", "a picture of…"), pull the subject out and conjure it even
+    /// when the diary failed to tag it. \b avoids matching "withdraw" etc.
+    private func forcedSketchSubject(from text: String?) -> String? {
+        guard settings.drawingEnabled, let text else { return nil }
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return nil }
+
+        let patterns = [
+            "(?i)\\b(?:draw|sketch|paint|illustrate|doodle)\\b(?:\\s+me)?(?:\\s+(?:a|an|the|some))?\\s+(.+)",
+            "(?i)\\b(?:picture|drawing|image|illustration)\\s+of\\s+(.+)",
+        ]
+        let ns = trimmed as NSString
+        for pattern in patterns {
+            guard let re = try? NSRegularExpression(pattern: pattern) else { continue }
+            if let match = re.firstMatch(in: trimmed, range: NSRange(location: 0, length: ns.length)),
+               match.numberOfRanges > 1 {
+                let subject = ns.substring(with: match.range(at: 1))
+                    .trimmingCharacters(in: CharacterSet(charactersIn: " .,:;!?-\"'“”‘’"))
+                if !subject.isEmpty { return subject }
+            }
+        }
+        return nil
     }
 
     private func extractHiddenTag(_ name: String, from text: String) -> String? {

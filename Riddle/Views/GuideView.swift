@@ -19,7 +19,7 @@ struct GuideView: View {
                         "Wipes the page without opening any controls.")
                     row("questionmark", "Draw a  ?  on the page",
                         "Summons this guide, at any time.")
-                    row("s.circle", "Draw a large S",
+                    row("v.circle", "Draw a large V",
                         "Opens the diary's memory.")
                     row("moon.zzz", "Draw a large  Z",
                         "Lets the diary sleep.")

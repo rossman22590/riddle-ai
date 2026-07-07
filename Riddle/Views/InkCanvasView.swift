@@ -176,44 +176,36 @@ final class CanvasController: ObservableObject {
         return true
     }
 
-    /// A large S opens memory. It has to be oversized and alone, with the
-    /// familiar upper/lower sweep, so a normal word does not become a command.
+    /// A large V opens memory — matching the seal on the diary's cover. One
+    /// stroke: down from the upper-left to a point near the bottom-centre, then
+    /// back up to the upper-right. Oversized and alone so an ordinary letter
+    /// "v" or a small checkmark never becomes a command.
     private func looksLikeMemoryMark() -> Bool {
         let strokes = pointStrokes()
-        guard strokes.count == 1, let points = strokes.first, points.count >= 24 else { return false }
+        guard strokes.count == 1, let points = strokes.first, points.count >= 10 else { return false }
 
         let b = bounds(of: points)
-        guard b.height > 150, b.width > 70 else { return false }
-        guard b.height > b.width * 1.05, b.width > b.height * 0.28 else { return false }
+        guard b.width > 130, b.height > 130 else { return false }
+        let ratio = b.width / b.height
+        guard ratio > 0.5, ratio < 2.2 else { return false }
+
         guard let first = points.first, let last = points.last else { return false }
-        guard first.y < b.minY + b.height * 0.38 else { return false }
-        guard last.y > b.minY + b.height * 0.62 else { return false }
-        guard distance(first, last) > min(b.width, b.height) * 0.35 else { return false }
+        // Both arms open at the top…
+        guard first.y < b.minY + b.height * 0.38, last.y < b.minY + b.height * 0.38 else { return false }
+        // …starting left, ending right.
+        guard first.x < b.midX, last.x > b.midX else { return false }
 
-        let top = points.filter { $0.y <= b.minY + b.height * 0.38 }
-        let middle = points.filter { $0.y > b.minY + b.height * 0.30 && $0.y < b.minY + b.height * 0.70 }
-        let bottom = points.filter { $0.y >= b.minY + b.height * 0.62 }
-        guard !top.isEmpty, !middle.isEmpty, !bottom.isEmpty else { return false }
+        // The vertex is the lowest point: near the bottom and near the centre.
+        guard let vertex = points.max(by: { $0.y < $1.y }) else { return false }
+        guard vertex.y > b.minY + b.height * 0.68 else { return false }
+        guard abs(vertex.x - b.midX) < b.width * 0.32 else { return false }
 
-        let topBounds = bounds(of: top)
-        let middleBounds = bounds(of: middle)
-        let bottomBounds = bounds(of: bottom)
-        guard topBounds.width > b.width * 0.42 else { return false }
-        guard middleBounds.width > b.width * 0.48 else { return false }
-        guard bottomBounds.width > b.width * 0.42 else { return false }
-        guard middleBounds.minX < b.midX, middleBounds.maxX > b.midX else { return false }
+        // The vertex should fall in the middle of the stroke — down, then up.
+        guard let vIndex = points.firstIndex(of: vertex) else { return false }
+        let n = points.count
+        guard vIndex > n / 6, vIndex < n * 5 / 6 else { return false }
 
-        var turns = 0
-        var lastDirection = 0
-        for pair in zip(points, points.dropFirst()) {
-            let dx = pair.1.x - pair.0.x
-            guard abs(dx) > max(2.5, b.width * 0.018) else { continue }
-            let direction = dx > 0 ? 1 : -1
-            if lastDirection != 0, direction != lastDirection { turns += 1 }
-            lastDirection = direction
-        }
-
-        return turns >= 2
+        return true
     }
 
     private func pointStrokes(minPoints: Int = 5) -> [[CGPoint]] {

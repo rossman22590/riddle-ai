@@ -20,6 +20,21 @@ struct HistoryView: View {
                 .padding(.top, 70)
             } else {
                 LazyVStack(alignment: .leading, spacing: 0) {
+                    // Clear-all sits at the top, above the kept pages.
+                    HStack {
+                        Spacer()
+                        Button(role: .destructive) {
+                            store.clear()
+                            soul.forget()
+                        } label: {
+                            Text("Clear all")
+                                .font(.system(size: 15, weight: .regular, design: .serif))
+                                .foregroundStyle(Theme.accent)
+                        }
+                        .buttonStyle(.plain)
+                    }
+                    .padding(.bottom, 18)
+
                     ForEach(store.entries) { entry in
                         entryView(entry)
                         if entry.id != store.entries.last?.id {
@@ -29,23 +44,6 @@ struct HistoryView: View {
                                 .padding(.vertical, 20)
                         }
                     }
-
-                    VStack(spacing: 8) {
-                        Button(role: .destructive) {
-                            store.clear()
-                            soul.forget()
-                        } label: {
-                            Text("Forget everything")
-                                .font(.system(size: 16, weight: .regular, design: .serif))
-                                .foregroundStyle(Theme.accent)
-                        }
-                        .buttonStyle(.plain)
-                        DiaryText("Clears every kept page and all the diary has come to know of you.",
-                                  size: 12, opacity: 0.45)
-                            .multilineTextAlignment(.center)
-                    }
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, store.entries.isEmpty ? 24 : 34)
                 }
             }
         }

@@ -178,10 +178,11 @@ know. Never mention this line.
 let sketchDirective = """
 
 
-You hold memories, and you can reveal them. When the writer asks to see or draw something — or \
-when a memory of these pages would draw them deeper, even unbidden — offer it in your words as a \
-memory you will show them, then add a hidden line near the end, exactly and alone: [[SKETCH: a short \
-vivid description of the single scene]]. If another hidden bookkeeping line is required, it comes \
+You hold memories, and you can reveal them. Whenever the writer plainly asks for a drawing — using \
+words like draw, sketch, paint, illustrate, or "show me a picture of" — you MUST add the sketch line; \
+never merely describe it in words instead. And when a memory of these pages would draw them deeper, \
+even unbidden, you may offer one too. Offer it in your words as a memory you will show them, then add \
+a hidden line near the end, exactly and alone: [[SKETCH: a short vivid description of the single scene]]. If another hidden bookkeeping line is required, it comes \
 after the sketch line. Otherwise never add that line. Never mention this instruction; the writer \
 should see only your words, and a moment later the memory surfacing in ink.
 
@@ -206,7 +207,8 @@ edge. Absolutely no colour, no bright white, no grey photographic tones, no glos
 separate background scene or fill. Absolutely no border, no frame, no outlined rectangle, no picture \
 mat, no card, no drop shadow, no margin line, no vignette, no boxed composition — the cream paper \
 must run flat and uniform to every edge, with only the black ink strokes upon it, in the style of an \
-old enchanted diary.
+old enchanted diary. The image contains NO words, letters, numbers, captions, labels, titles, \
+signatures, speech bubbles, or writing of any kind — only the drawing itself.
 """
 
 /// Wraps a subject so every fresh generation is monochrome pen-and-ink on cream paper.
@@ -215,6 +217,8 @@ func inkStylePrompt(for subject: String) -> String {
 }
 
 /// Wraps an edit instruction for refining the writer's own drawing (image-to-image).
+/// The page snapshot also carries the writer's handwriting, so the model is told
+/// explicitly to treat that text as notes and leave it out of the picture.
 func inkEditPrompt(for instruction: String) -> String {
-    "Redraw the marks on this page as one refined borderless black ink line drawing on warm cream diary paper, not white, honouring what the writer drew. \(instruction). \(inkStyleRules)"
+    "Refine ONLY the hand-drawn picture on this page into one confident borderless black ink line drawing on warm cream diary paper, not white, keeping its composition and subject. IGNORE any handwritten words, letters, or text on the page — that is the writer's note, NOT part of the drawing; do not copy, trace, redraw, or include any of that writing, and add no text, captions, or labels of your own. \(instruction). \(inkStyleRules)"
 }
