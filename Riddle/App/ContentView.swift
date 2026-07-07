@@ -12,8 +12,8 @@ struct ContentView: View {
 
     var body: some View {
         ZStack {
-            // Pure ink on paper. The guide is summoned by a two-finger tap, a
-            // drawn "?", or the discreet seal in the corner.
+            // Pure ink on paper. The guide is summoned by a two-finger tap or a
+            // drawn "?"; the corner mark only wakes an unbound diary.
             DiaryView(onSummonGuide: { showGuide = true })
 
             seal
@@ -41,9 +41,8 @@ struct ContentView: View {
         .sheet(isPresented: $showHistory) { HistoryView() }
     }
 
-    /// A faint wax-seal-like mark, top-trailing — the discoverable way into the
-    /// guide (and thus the key). When the diary has no voice yet, it glows a
-    /// little to invite a tap.
+    /// No visible chrome once the diary is awake. Before a key is bound, leave
+    /// only a faint moon-mark so the first opening has somewhere to begin.
     private var seal: some View {
         VStack {
             HStack {
@@ -52,13 +51,19 @@ struct ContentView: View {
                     // No voice yet? Go straight to the key. Otherwise, the guide.
                     if settings.apiKeyIsSet { showGuide = true } else { showSettings = true }
                 } label: {
-                    Image(systemName: settings.apiKeyIsSet ? "questionmark" : "moon.zzz")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(Theme.ink.opacity(settings.apiKeyIsSet ? 0.4 : 0.62))
-                        .frame(width: 42, height: 42)
-                        .background(.ultraThinMaterial, in: Circle())
-                        .overlay(Circle().stroke(Theme.ink.opacity(0.1), lineWidth: 1))
+                    if settings.apiKeyIsSet {
+                        Color.clear
+                            .frame(width: 44, height: 44)
+                            .contentShape(Circle())
+                    } else {
+                        Image(systemName: "moon.zzz")
+                            .font(.system(size: 15, weight: .medium))
+                            .foregroundStyle(Theme.ink.opacity(0.42))
+                            .frame(width: 44, height: 44)
+                            .contentShape(Circle())
+                    }
                 }
+                .buttonStyle(.plain)
                 .accessibilityLabel("Guide")
             }
             Spacer()

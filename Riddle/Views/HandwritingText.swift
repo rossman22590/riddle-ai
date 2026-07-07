@@ -49,6 +49,9 @@ func makeInkLayout(text: String, font: UIFont, maxWidth: CGFloat) -> InkLayout {
 
     for (lineIndex, line) in lines.enumerated() {
         let lineOrigin = lineIndex < origins.count ? origins[lineIndex] : .zero
+        let lineSeed = Double(lineIndex + 1)
+        let lineDrift = sin(lineSeed * 2.17) * 1.2
+        let lineTilt = sin(lineSeed * 3.11) * 0.005
         let runs = (CTLineGetGlyphRuns(line) as? [CTRun]) ?? []
         for run in runs {
             let count = CTRunGetGlyphCount(run)
@@ -61,7 +64,16 @@ func makeInkLayout(text: String, font: UIFont, maxWidth: CGFloat) -> InkLayout {
             for glyphIndex in 0..<count {
                 let gx = lineOrigin.x + positions[glyphIndex].x
                 let gy = lineOrigin.y + positions[glyphIndex].y
-                var transform = CGAffineTransform(translationX: gx, y: gy).concatenating(flip)
+
+                // A living hand, not a typeset font: each letter drifts off the
+                // baseline and tilts a hair — a smooth wave plus fine jitter,
+                // seeded by position so it's stable, never a wall of clones.
+                let seed = Double(paths.count)
+                let tilt = lineTilt + sin(seed * 12.9898) * 0.018
+                let drift = lineDrift + sin(seed * 0.7) * 1.35 + sin(seed * 78.233) * 0.72
+                var transform = CGAffineTransform(rotationAngle: tilt)
+                    .concatenating(CGAffineTransform(translationX: gx, y: gy + drift))
+                    .concatenating(flip)
 
                 if let glyphPath = CTFontCreatePathForGlyph(ctFont, glyphs[glyphIndex], nil),
                    let moved = glyphPath.copy(using: &transform) {
@@ -129,7 +141,6 @@ struct RevealingHandwriting: View {
     }
 
     private func draw(into context: inout GraphicsContext, size: CGSize) {
-        let ink = GraphicsContext.Shading.color(color)
         let lineWidth = max(1.1, uiFont.pointSize * 0.026)
         var nib: CGPoint?
 
@@ -138,12 +149,26 @@ struct RevealingHandwriting: View {
             let recency = revealed - Double(index)
             if recency <= 0 { continue }
 
+            let shade = inkShade(for: index)
+            let ink = GraphicsContext.Shading.color(color.opacity(shade))
+
             if recency >= 1 {
                 context.fill(path, with: ink)          // written and dry
+
+                // For a breath after the nib leaves, the stroke is still wet and
+                // darker along its edge. Subtle enough to feel like pressure.
+                let wetness = max(0, 1.45 - recency) / 1.45
+                if wetness > 0 {
+                    context.stroke(
+                        path,
+                        with: .color(color.opacity(0.13 * wetness)),
+                        style: StrokeStyle(lineWidth: lineWidth * 2.2, lineCap: .round, lineJoin: .round)
+                    )
+                }
             } else {
                 let frac = recency
                 // The body inks in behind the moving nib…
-                context.fill(path, with: .color(color.opacity(frac * frac)))
+                context.fill(path, with: .color(color.opacity(shade * frac * frac)))
                 // …while the nib traces the letter's outline in real time.
                 let traced = path.trimmedPath(from: 0, to: frac)
                 context.stroke(
@@ -155,19 +180,24 @@ struct RevealingHandwriting: View {
             }
         }
 
-        // The nib itself: a soft wet glow riding the exact point being inked.
+        // The pen's tip: a small pool of wet ink riding the point being inked —
+        // dark and glistening, not a bright cursor. A faint sheen sits atop it.
         if let nib {
             context.drawLayer { layer in
-                layer.addFilter(.blur(radius: 4))
+                layer.addFilter(.blur(radius: 2.6))
                 layer.fill(
-                    Path(ellipseIn: CGRect(x: nib.x - 4, y: nib.y - 4, width: 8, height: 8)),
-                    with: .color(Theme.accent.opacity(0.5))
+                    Path(ellipseIn: CGRect(x: nib.x - 3.6, y: nib.y - 3.6, width: 7.2, height: 7.2)),
+                    with: .color(color.opacity(0.92))
                 )
             }
             context.fill(
-                Path(ellipseIn: CGRect(x: nib.x - 1.6, y: nib.y - 1.6, width: 3.2, height: 3.2)),
-                with: .color(Theme.accent)
+                Path(ellipseIn: CGRect(x: nib.x - 3.0, y: nib.y - 3.6, width: 2.1, height: 2.1)),
+                with: .color(.white.opacity(0.28))
             )
         }
+    }
+
+    private func inkShade(for index: Int) -> Double {
+        0.90 + 0.09 * Double((index * 47 + 19) % 97) / 96.0
     }
 }
