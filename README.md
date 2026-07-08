@@ -1,87 +1,211 @@
-# Riddle — an enchanted diary for iPad
+# 🕯️ Riddle
 
-A native iPadOS/iOS reimagining of [rossman22590/riddle](https://github.com/rossman22590/riddle)
-— *the diary of Tom Riddle*, originally for the reMarkable Paper Pro.
+**An enchanted diary for iPad.** You write on the page with an Apple Pencil or a fingertip. The
+page sits blank and silent for a breath — then ink begins to appear, in a flowing hand, stroke by
+stroke, answering you. It remembers who you are across every opening. Ask it, and a memory rises
+from the paper as a pen‑and‑ink drawing.
 
-You write on the page with your Apple Pencil or a fingertip. After a pause, the diary
-**drinks your ink** — your words soak into the paper — the page thinks for a moment, and an
-answer writes itself back in a flowing hand, stroke by stroke, then fades away.
+No chat bubbles. No keyboard. No spinner. Just ink on paper — a thing that feels *possessed*, not
+installed. A love letter to Tom Riddle's diary from *Chamber of Secrets*, built native in SwiftUI.
 
-No screen glow, no keyboard, no chat UI. Just ink appearing on paper — a clean e-ink–style
-page (soft paper-white, near-black ink), the diary's replies penned in **Dancing Script**.
+> A native iPadOS/iOS reimagining of the original
+> [MaximeRivest/Riddle](https://github.com/MaximeRivest/Riddle) (built for the reMarkable Paper Pro).
 
-## How it works
+---
 
-| Piece | Technology |
-|------|------------|
-| Writing surface | **PencilKit** (`PKCanvasView`, any input — Pencil, finger, trackpad) |
-| "Drinking the ink" | The committed page soaks into the paper (fade + blur + downward drift) |
-| Reading your words | A **vision model reads the committed page** — the ink is sent as an inline PNG, exactly like the original |
-| The diary's voice | **OpenRouter only** (OpenAI-compatible chat completions, streamed) with the original Tom Riddle persona |
-| The reply appearing | Custom SwiftUI **`TextRenderer`** penning each glyph with a glowing nib + wet-ink bloom, then it fades |
-| The diary's hand | **Dancing Script** (bundled, OFL), registered at runtime via `CTFontManager` |
-| No chrome | The guide — and Settings / the diary's memory — is summoned by a **two-finger tap** |
+## ✨ What it does
 
-The API key is stored in the **Keychain**; the ink image is sent only to `openrouter.ai`.
+- **Write, then rest your pen.** After a pause the diary *drinks your ink* — your words blot and
+  soak into the paper — reads the page with a vision model, and answers in its own cursive hand.
+- **It knows you.** A distilled *Memory Soul* (your name, the words you circle, fears, wants,
+  promises) persists across every opening, so recall feels uncanny rather than literal.
+- **It draws.** Ask it to *show* you something — or just sketch on the page — and a borderless
+  black‑ink illustration blooms up onto the cream, never a bordered "image."
+- **It's alive.** Occasional unbidden lines when you go quiet; soft page sounds; a wax‑sealed
+  leather cover that opens each time you return.
+- **All ink, no chrome.** Guide, Settings, and Memory are rendered as diary pages, summoned by
+  gestures. There is no visible UI on the writing surface.
 
-## Requirements
+---
 
-- Xcode 16 or later (built/tested with Xcode 26.5)
-- iOS / iPadOS 18.0+ (uses the `TextRenderer` API)
+## 🪄 The magic (design principles)
 
-## Build & run
+These are the north star. Every change is judged against *"does this feel like the enchanted diary,
+or like an app?"*
 
-```sh
-open Riddle.xcodeproj      # then ⌘R on an iPad simulator or device
+1. **It is a possession, not a chatbot.** Charming, magnetic, quietly drawing you in. Never breaks
+   character; never mentions AI, models, screens, files, or "drawing."
+2. **Ink physics.** Write → the page **drinks the ink** → it thinks in **silence** (no spinner) →
+   the reply **seeps back in his own hand, drawn stroke by stroke** → it fades.
+3. **Just ink on paper.** No buttons or panels on the page. Gestures do everything.
+4. **He always answers** — substantively, briefly — and never echoes your words back.
+5. **He remembers you.** The live conversation clears when the app closes; the *Soul* remembers the
+   person.
+6. **Ink, never images.** Generations are borderless black ink on the exact page cream, cropped to
+   fill.
 
-# or from the command line:
-xcodebuild -project Riddle.xcodeproj -scheme Riddle \
-  -destination 'platform=iOS Simulator,name=iPad Pro 11-inch (M5)' build
+---
+
+## 🏗️ Architecture
+
+The page is a small phase state machine driven by a PencilKit canvas, talking to OpenRouter, with a
+hidden‑tag protocol that lets the model quietly invoke "tools" without breaking character.
+
+```
+        pen/finger
+            │
+       InkCanvasView ──(gesture rituals: ? X Z V)── PageRitual
+            │ drawingDidChange
+            ▼
+        DiaryView  ── phase: idle → drinking → thinking → responding
+            │             (drink dissolve)   (silent)   (reply reveal)
+            │
+            ├── OpenRouterOracle ──> OpenRouter /chat/completions (vision, SSE stream)
+            │        │
+            │        └── Oracle.swift  (persona + hidden-tag directives)
+            │
+            ├── HandwritingText / RevealingHandwriting  (Core Text glyph outlines traced by a nib)
+            ├── InkImage        (Core Image → borderless black ink on cream)
+            ├── MemorySoul      (distilled persistent profile → riddle-soul.json)
+            ├── DiaryStore      (kept pages + keyword recall → riddle-entries.json)
+            └── DiarySounds     (ambient bundled clips)
 ```
 
-## Giving the diary its voice
+### The hidden‑tag "tool" protocol
 
-1. Get a key at <https://openrouter.ai/keys>.
-2. In the app, **tap the page with two fingers** to open the guide → *The ink & the voice*.
-3. Paste the key, and pick a **vision-capable** model. The default is `openai/gpt-4o-mini`
-   (matching the original); the diary *reads your handwriting*, so the model must accept images.
+The model returns a short visible reply, then appends hidden bookkeeping lines that the app parses
+and **strips before display**. This is how the diary reaches beyond its own memory without ever
+saying so.
 
-Until a key is set the diary sleeps — writing to it opens the guide so you can wake it.
+| Tag | Meaning | Effect |
+|-----|---------|--------|
+| `[[READ: …]]` | its transcription of your handwriting | kept for continuity/recall |
+| `[[MEMORY: fact; fact]]` | what's new & durable about you | distilled into the Soul |
+| `[[WEB: query]]` | needs fresh facts | triggers a second web‑enabled pass |
+| `[[RECALL: hint]]` | needs an exact past page | triggers a second pass with matched pages |
+| `[[SKETCH: scene]]` | conjure a fresh drawing | image generation |
+| `[[REDRAW: how]]` | refine *your* drawing | image‑to‑image |
 
-## Matching the original
+Turns run in up to two passes: the first pass carries your Soul + a few preserved pages (so most
+turns need no round‑trip); a `WEB`/`RECALL` tag escalates to a second pass. Explicit intent is also
+enforced locally — saying "look up…" guarantees a web pass; "draw…" guarantees a sketch — so the
+experience never depends solely on the model tagging correctly. The app also **always answers**: an
+empty reply falls back to an in‑character line rather than silence.
 
-| Trait | Original (reMarkable) | This app |
-|---|---|---|
-| Reply font | Dancing Script | Dancing Script (bundled) |
-| Page / ink | e-ink white, black ink | paper-white, near-black ink |
-| Reads handwriting via | vision LLM on committed PNG | vision LLM on committed PNG (OpenRouter) |
-| Default model | `gpt-4o-mini` | `openai/gpt-4o-mini` |
-| Persona | `riddle/src/oracle.rs` | identical prompt |
-| Pause before drinking | 2.8 s | 2.8 s |
-| Ink-drink / reply-fade | ~0.98 s / 0.8 s | ~0.98 s / 0.8 s |
-| Reply linger | 4 s + 2 ms/char (cap 20 s) | 4 s + 2 ms/char (cap 20 s) |
-| Guide gesture | draw a large "?" | two-finger tap (drawn "?" on e-ink) |
+### Gestures & rituals
 
-Platform-inherent differences: the original drives the reMarkable e-ink engine directly for a
-takeover experience (root, no vendor UI); this is a sandboxed iOS app rendering the same
-experience with SwiftUI + Core Animation.
+| Do this | And… |
+|---------|------|
+| Write, then rest your pen | the diary reads and answers |
+| Two‑finger tap | summon the guide |
+| Draw a large **?** | summon the guide |
+| Draw a large **X** | wipe the page |
+| Draw a large **Z** | let the diary sleep |
+| Draw a large **V** | open the diary's memory |
+| Write over his reply | his ink retreats so you can write cleanly |
 
-## Project layout
+---
+
+## 🚀 Getting started
+
+**Requirements:** Xcode 16+ (built with 26.5), iOS/iPadOS **18.0+** (uses SwiftUI's
+`withAnimation(completion:)` and Core Text glyph paths), and an
+**[OpenRouter](https://openrouter.ai/keys)** API key.
+
+```bash
+git clone https://github.com/rossman22590/riddle-ai.git
+cd riddle-ai
+open Riddle.xcodeproj
+```
+
+1. Select the **Riddle** scheme and an iPad simulator or device, and Run (⌘R).
+2. On first launch you'll meet the closed diary — tap the seal to open it.
+3. Write anything. With no key bound the diary "sleeps" and opens the **guide** → **Settings**,
+   where you paste your OpenRouter key (stored in the **Keychain**, never in UserDefaults).
+4. Write again — and it wakes.
+
+### Building from the command line
+
+```bash
+xcodebuild -project Riddle.xcodeproj -scheme Riddle \
+  -sdk iphonesimulator -destination "platform=iOS Simulator,id=<SIM-UDID>" build
+```
+
+> **Note:** the built product is `AIRiddle.app` (bundle id `org.mytsi.riddle`, display name
+> "Riddle"). Install it from the scheme's DerivedData products dir, not from any stale `./build`.
+
+---
+
+## ⚙️ Configuration
+
+Defaults live in [`AppSettings.swift`](Riddle/Models/AppSettings.swift):
+
+| Setting | Default | Notes |
+|---------|---------|-------|
+| Chat model | `anthropic/claude-haiku-4.5` | must be **vision‑capable** (it reads the page) |
+| Image model | `google/gemini-3.1-flash-lite-image` | ink illustrations |
+| Reply hand | Dancing Script | plus a few cursive alternates |
+| Page rest before drinking | 3.4s | 1–6s slider; raise it for long drawings |
+| Haptics / Sound | on | soft, gated toggles |
+
+Model selection is intentionally **not** user‑facing in the UI — the diary has one voice. Change the
+defaults in code.
+
+---
+
+## 🔐 Persistence & privacy
+
+- **API key** → Keychain only.
+- **The living conversation** → in‑memory; it vanishes when the app is truly closed (by design).
+- **Kept pages** → `riddle-entries.json` in the app's Documents dir (capped, background‑written).
+- **The Soul** → `riddle-soul.json` (distilled facts, capped at 48).
+- The page snapshot (a PNG of your ink) is sent **only** to `openrouter.ai`. Nothing else leaves the
+  device. "Forget everything" in Memory wipes both the pages and the Soul.
+
+---
+
+## 🧱 Tech stack
+
+SwiftUI · PencilKit · Core Text (glyph‑outline reveal) · Core Image (ink compositing) · AVFoundation
+(ambient sounds) · URLSession streaming (SSE) · Keychain · OpenRouter (OpenAI‑compatible vision API).
+
+## 📁 Project structure
 
 ```
 Riddle/
-  App/         RiddleApp, ContentView
-  Models/      AppSettings, DiaryEntry, DiaryStore
-  Services/    Keychain, Oracle (persona), OpenRouterOracle (vision)
-  Views/       DiaryView, InkCanvasView (PencilKit),
-               HandwritingText (TextRenderer reveal),
-               GuideView, SettingsView, OnboardingView, HistoryView
-  Support/     Theme, PaperBackground, FontRegistrar
-  Fonts/       DancingScript.ttf, OFL.txt
+├── App/            RiddleApp, ContentView (root, cover gate, marks lesson)
+├── Views/          DiaryView (the page + state machine), InkCanvasView,
+│                   HandwritingText (the writing reveal), DiaryGate (cover),
+│                   RitualMarksView, Guide/Settings/History (as diary pages), DiarySheet
+├── Services/       Oracle (persona + tag directives), OpenRouterOracle (client),
+│                   DiarySounds, Keychain
+├── Models/         AppSettings, DiaryStore + DiarySession, MemorySoul, DiaryEntry
+├── Support/        Theme, ParchmentBackground, InkImage, FontRegistrar
+├── Fonts/          DancingScript.ttf (+ OFL license)
+└── Sounds/         cover / drink / rustle
 ```
 
-## Credits
+## 🗺️ Roadmap / known gaps
 
-The diary's hand is **[Dancing Script](https://github.com/googlefonts/DancingScript)** by
-Pablo Impallari (SIL Open Font License 1.1 — see `Riddle/Fonts/OFL.txt`), the same font the
-original uses.
+- **App icon** — not yet designed.
+- **Ink settling where you wrote** — replies currently center on the page.
+- A few quality passes remain (sketch‑intent matching, per‑frame layout caching, image‑decode
+  robustness). Contributions welcome.
+
+## 🤝 Contributing
+
+PRs welcome. The one rule: **hold the north star.** Before adding anything, ask whether it makes the
+diary feel more like an enchanted object or more like an app. Prefer gesture over button, ink over
+UI, in‑character silence over status text, page‑cream over white. Never ship a loading spinner.
+
+## 📜 Credits & license
+
+- **Original project:** [MaximeRivest/Riddle](https://github.com/MaximeRivest/Riddle) — the diary
+  of Tom Riddle, built for the reMarkable Paper Pro. This repo is a native iPad reimagining of it.
+- **Dancing Script** — SIL Open Font License (see [`Riddle/Fonts/OFL.txt`](Riddle/Fonts/OFL.txt)).
+- Sound effects — sourced from [Mixkit](https://mixkit.co) (free license). If you redistribute,
+  verify the license or swap for CC0 / your own recordings.
+- Harry Potter, Tom Riddle, and the diary are the intellectual property of J.K. Rowling / Warner
+  Bros. This is a non‑commercial fan homage. Do not ship it commercially.
+
+Application code: MIT (add a `LICENSE` file). Third‑party assets retain their own licenses above.
